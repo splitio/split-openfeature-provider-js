@@ -1,5 +1,9 @@
 {
   "name": "@openfeature/js-split-provider",
   "version": "0.0.1",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "@openfeature/nodejs-sdk": "^0.2.0",
+    "@openfeature/extra": "^0.2.0"
+  }
 }

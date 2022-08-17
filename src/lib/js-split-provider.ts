@@ -1,5 +1,4 @@
-import { parseValidJsonObject, parseValidNumber, TypeMismatchError } from '@openfeature/extra';
-import { EvaluationContext, Provider, ResolutionDetails } from '@openfeature/openfeature-js';
+import { EvaluationContext, Provider, ResolutionDetails, TypeMismatchError, ParseError } from '@openfeature/nodejs-sdk';
 import type { Attributes, IClient } from '@splitsoftware/splitio/types/splitio';
 
 /**
@@ -92,7 +91,7 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
     const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
-    return { ...details, value: parseValidNumber(details.value) };
+    return { ...details, value: this.parseValidNumber(details.value) };
   }
 
   async resolveObjectEvaluation<U extends object>(
@@ -101,7 +100,7 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext
   ): Promise<ResolutionDetails<U>> {
     const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
-    return { ...details, value: parseValidJsonObject(details.value) };
+    return { ...details, value: this.parseValidJsonObject(details.value) };
   }
 
   private async evaluateTreatment(flagKey: string, consumer: Consumer): Promise<ResolutionDetails<string>> {
@@ -119,6 +118,35 @@ export class OpenFeatureSplitProvider implements Provider {
         // Stringify context objects include date.
         attributes: JSON.parse(JSON.stringify(attributes)),
       };
+    }
+  }
+
+  private parseValidNumber(stringValue: string | undefined) {
+    if (stringValue === undefined) {
+      throw new ParseError(`Invalid 'undefined' value.`);
+    }
+    const result = Number.parseFloat(stringValue);
+    if (Number.isNaN(result)) {
+      throw new TypeMismatchError(`Invalid numeric value ${stringValue}`);
+    }
+    return result;
+  }
+
+  private parseValidJsonObject<T extends Object>(stringValue: string | undefined): T {
+    if (stringValue === undefined) {
+      throw new ParseError(`Invalid 'undefined' JSON value.`);
+    }
+    // we may want to allow the parsing to be customized.
+    try {
+      const value = JSON.parse(stringValue);
+      if (typeof value !== 'object') {
+        throw new TypeMismatchError(
+          `Flag value ${stringValue} had unexpected type ${typeof value}, expected "object"`
+        );
+      }
+      return value;
+    } catch (err) {
+      throw new ParseError(`Error parsing ${stringValue} as JSON, ${err}`);
     }
   }
 }
