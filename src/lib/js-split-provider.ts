@@ -1,5 +1,5 @@
 import { EvaluationContext, Provider, ResolutionDetails, TypeMismatchError, ParseError } from '@openfeature/nodejs-sdk';
-import type { Attributes, IClient } from '@splitsoftware/splitio/types/splitio';
+import SplitIO from '@splitsoftware/splitio/types/splitio';
 
 /**
  * This simple provider implementation relies on storing all data as strings in the treatment value.
@@ -8,12 +8,12 @@ import type { Attributes, IClient } from '@splitsoftware/splitio/types/splitio';
  * and for all values store the data in teh associated "split config" JSON.
  */
 export interface SplitProviderOptions {
-  splitClient: IClient;
+  splitClient: SplitIO.IClient;
 }
 
 type Consumer = {
   key: string;
-  attributes: Attributes;
+  attributes: SplitIO.Attributes;
 };
 
 /**
@@ -26,7 +26,7 @@ export class OpenFeatureSplitProvider implements Provider {
     name: 'split',
   };
   private initialized: Promise<void>;
-  private client: IClient;
+  private client: SplitIO.IClient;
 
   constructor(options: SplitProviderOptions) {
     this.client = options.splitClient;

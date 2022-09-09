@@ -11,9 +11,12 @@ This Provider is designed to allow the use of OpenFeature with Split, the platfo
 Below is a simple example that describes the instantiation of the Split Provider. Please see the [OpenFeature Documentation](https://docs.openfeature.dev/docs/reference/concepts/evaluation-api) for details on how to use the OpenFeature SDK.
 
 ```js
-import { openFeature } from '@openfeature/nodejs-sdk';
+const OpenFeature = require('@openfeature/nodejs-sdk').OpenFeature;
+const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
+const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-nodejs-split-provider').OpenFeatureSplitProvider;
 
-openFeature.setProvider(new SplitProvider());
+splitClient = SplitFactory({core: {authorizationKey: 'localhost'}}).client();
+openFeature.setProvider(splitClient);
 ```
 
 ## Use of OpenFeature with Split
