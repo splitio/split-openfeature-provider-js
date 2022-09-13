@@ -1,107 +1,188 @@
+const OpenFeature = require('@openfeature/nodejs-sdk').OpenFeature;
+const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
+import { OpenFeatureSplitProvider } from '../..';
+
 export default async function(assert) {
 
-  const useDefaultTest = () => {
-    assert.equal(1, 1);
+  const useDefaultTest = async (client) => {
+    // assert.equal(2, 2);
+    let flagName = 'random-non-existent-feature';
+
+    let result = await client.getBooleanValue(flagName, false);
+    assert.equal(result, false);
+
+    result = await client.getBooleanValue(result, true);
+    assert.equal(result, true);
+
+    let defaultString = 'blah';
+    let resultString = await client.getStringValue(flagName, defaultString);
+    assert.equals(resultString, defaultString);
+
+    let defaultInt = 100;
+    let resultInt = await client.getNumberValue(flagName, defaultInt);
+    assert.equals(resultInt, defaultInt);
+
+    let defaultStructure = {
+      foo: 'bar'
+    };
+    let resultStructure = await client.getObjectValue(flagName, defaultStructure);
+    assert.equals(resultStructure, defaultStructure);
   };
 
-  const missingTargetingKeyTest = () => {
-    assert.equal(2, 2);
+  const missingTargetingKeyTest = async (client) => {
+    let details = await client.getBooleanDetails('non-existent-feature', false, {});
+    assert.equals(details.value, false);
+    assert.equals('TARGETING_KEY_MISSING', details.reason);
   };
 
-  const getControlVariantNonExistentSplit = () => {
-    assert.equal(1, 1);
+  const getControlVariantNonExistentSplit = async (client) => {
+    let details = await client.getBooleanDetails('non-existent-feature', false);
+    assert.equals(details.value, false);
+    assert.equals(details.variant, 'control');
+    assert.equals(details.reason, 'FLAG_NOT_FOUND');
   };
 
-  const getBooleanSplitTest = () => {
-    assert.equal(1, 1);
+  const getBooleanSplitTest = async (client) => {
+    let result = await client.getBooleanValue('some_other_feature', true);
+    assert.equals(result, false);
   };
 
-  const getBooleanSplitWithKeyTest = () => {
-    assert.equal(1, 1);
+  const getBooleanSplitWithKeyTest = async (client) => {
+    let result = await client.getBooleanValue('my_feature', false);
+    assert.equals(result, true);
+
+    result = await client.getBooleanValue('my_feature', true, { targetingKey: 'randomKey' });
+    assert.equals(result, false);
   };
 
-  const getStringSplitTest = () => {
-    assert.equal(1, 1);
+  const getStringSplitTest = async (client) => {
+    let result = await client.getStringValue('some_other_feature', 'on');
+    assert.equals(result, 'off');
   };
 
-  const getIntegerSplitTest = () => {
-    assert.equal(1, 1);
+  const getNumberSplitTest = async (client) => {
+    let result = await client.getNumberValue('int_feature', 0);
+    assert.equals(result, 32);
   };
 
-  const getObjectSplitTest = () => {
-    assert.equal(1, 1);
+  const getObjectSplitTest = async (client) => {
+    let result = await client.getObjectValue('obj_feature', {});
+    assert.equals(result, { 'key': 'value' });
   };
 
-  const getDoubleSplitTest = () => {
-    assert.equal(1, 1);
+  const getMetadataNameTest = async (client) => {
+    assert.equals(client.metadata.name, 'test');
   };
 
-  const getMetadataNameTest = () => {
-    assert.equal(1, 1);
+  const getBooleanDetailsTest = async (client) => {
+    let details = await client.getBooleanDetails('some_other_feature', true);
+    assert.equals(details.flagKey, 'some_other_feature');
+    assert.equals(details.reason, 'TARGETING_MATCH');
+    assert.equals(details.value, false);
+    assert.equals(details.variant, 'off');
+    assert.equals(details.errorCode, null);
   };
 
-  const getBooleanDetailsTest = () => {
-    assert.equal(1, 1);
+  const getNumberDetailsTest = async (client) => {
+    let details = await client.getNumberDetails('int_feature', 0);
+    assert.equals(details.flagKey, 'int_feature');
+    assert.equals(details.reason, 'TARGETING_MATCH');
+    assert.equals(details.value, 32);
+    assert.equals(details.variant, '32');
+    assert.equals(details.errorCode, null);
   };
 
-  const getIntegerDetailsTest = () => {
-    assert.equal(1, 1);
+  const getStringDetailsTest = async (client) => {
+    let details = await client.getStringDetails('some_other_feature', 'blah');
+    assert.equals(details.flagKey, 'some_other_feature');
+    assert.equals(details.reason, 'TARGETING_MATCH');
+    assert.equals(details.value, 'off');
+    assert.equals(details.variant, 'off');
+    assert.equals(details.errorCode, null);
   };
 
-  const getStringDetailsTest = () => {
-    assert.equal(1, 1);
+  const getObjectDetailsTest = async (client) => {
+    let details = await client.getObjectDetails('obj_feature', {});
+    assert.equals(details.flagKey, 'obj_feature');
+    assert.equals(details.reason, 'TARGETING_MATCH');
+    assert.equals(details.value, { key: 'value' });
+    assert.equals(details.variant, '{"key": "value"}');
+    assert.equals(details.errorCode, null);
   };
 
-  const getObjectDetailsTest = () => {
-    assert.equal(1, 1);
+  const getBooleanFailTest = async (client) => {
+    let value = await client.getBooleanValue('obj_feature', false);
+    assert.equals(value, false);
+
+    let details = await client.getBooleanDetails('obj_feature', false);
+    assert.equals(details.value, false);
+    assert.equals(details.errorCode, 'PARSE_ERROR');
+    assert.equals(details.reason, 'ERROR');
+    assert.equals(details.variant, null);
   };
 
-  const getDoubleDetailsTest = () => {
-    assert.equal(1, 1);
+  const getNumberFailTest = async (client) => {
+    let value = await client.getNumberValue('obj_feature', 10);
+    assert.equals(value, 10);
+
+    let details = await client.getNumberDetails('obj_feature', 10);
+    assert.equals(details.value, 10);
+    assert.equals(details.errorCode, 'PARSE_ERROR');
+    assert.equals(details.reason, 'ERROR');
+    assert.equals(details.variant, null);
   };
 
-  const getBooleanFailTest = () => {
-    assert.equal(1, 1);
+  const getObjectFailTest = async (client) => {
+    let defaultObject = { foo: 'bar' };
+    let value = await client.getObjectValue('int_feature', defaultObject);
+    assert.equals(value, defaultObject);
+
+    let details = await client.getObjectDetails('int_feature', defaultObject);
+    assert.equals(details.value, defaultObject);
+    assert.equals(details.errorCode, 'PARSE_ERROR');
+    assert.equals(details.reason, 'ERROR');
+    assert.equals(details.variant, null);
   };
 
-  const getIntegerFailTest = () => {
-    assert.equal(1, 1);
-  };
+  let splitClient = SplitFactory({
+    core: {
+      authorizationKey: 'localhost'
+    },
+    features: './split.yaml'
+  }).client();
 
-  const getDoubleFailTest = () => {
-    assert.equal(1, 1);
-  };
+  let provider = new OpenFeatureSplitProvider({splitClient});
+//   OpenFeature.setProvider(provider);
 
-  const getObjectFailTest = () => {
-    assert.equal(1, 1);
+  let client = OpenFeature.getClient('test');
+  let evaluationContext = {
+    targetingKey: 'key'
   };
+  client.evaluationContext = evaluationContext;
 
-  useDefaultTest();
+  useDefaultTest(client);
  
-  missingTargetingKeyTest();
+  missingTargetingKeyTest(client);
   
-  getControlVariantNonExistentSplit();
+  getControlVariantNonExistentSplit(client);
 
-  getBooleanSplitTest();
-  getBooleanSplitWithKeyTest();
+  getBooleanSplitTest(client);
+  getBooleanSplitWithKeyTest(client);
  
-  getStringSplitTest();
-  getIntegerSplitTest();
-  getObjectSplitTest();
-  getDoubleSplitTest();
+  getStringSplitTest(client);
+  getNumberSplitTest(client);
+  getObjectSplitTest(client);
  
-  getMetadataNameTest();
+  getMetadataNameTest(client);
  
-  getBooleanDetailsTest();
-  getIntegerDetailsTest();
-  getStringDetailsTest();
-  getObjectDetailsTest();
-  getDoubleDetailsTest();
+  getBooleanDetailsTest(client);
+  getNumberDetailsTest(client);
+  getStringDetailsTest(client);
+  getObjectDetailsTest(client);
  
-  getBooleanFailTest();
-  getIntegerFailTest();
-  getDoubleFailTest();
-  getObjectFailTest();
+  getBooleanFailTest(client);
+  getNumberFailTest(client);
+  getObjectFailTest(client);
 
   assert.end();
 }
