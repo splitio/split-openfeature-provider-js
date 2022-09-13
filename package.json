@@ -1,6 +1,6 @@
 {
   "name": "@splitsoftware/openfeature-nodejs-split-provider",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Split OpenFeature Provider",
   "files": [
     "README.md",
@@ -27,7 +27,7 @@
     "node": ">=6"
   },
   "dependencies": {
-    "@openfeature/nodejs-sdk": "^0.2.0",
+    "@openfeature/nodejs-sdk": "^0.3.2",
     "@splitsoftware/splitio": "^10.21.1"
   },
   "devDependencies": {
