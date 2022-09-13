@@ -5,14 +5,13 @@ import { OpenFeatureSplitProvider } from '../..';
 export default async function(assert) {
 
   const useDefaultTest = async (client) => {
-    // assert.equal(2, 2);
     let flagName = 'random-non-existent-feature';
 
     let result = await client.getBooleanValue(flagName, false);
     assert.equal(result, false);
 
-    result = await client.getBooleanValue(result, true);
-    assert.equal(result, true);
+    let result2 = await client.getBooleanValue(flagName, true);
+    assert.equal(result2, true);
 
     let defaultString = 'blah';
     let resultString = await client.getStringValue(flagName, defaultString);
@@ -30,9 +29,9 @@ export default async function(assert) {
   };
 
   const missingTargetingKeyTest = async (client) => {
-    let details = await client.getBooleanDetails('non-existent-feature', false, {});
+    let details = await client.getBooleanDetails('non-existent-feature', false, { targetingKey: undefined });
     assert.equals(details.value, false);
-    assert.equals('TARGETING_KEY_MISSING', details.reason);
+    assert.equals(details.errorCode, 'TARGETING_KEY_MISSING');
   };
 
   const getControlVariantNonExistentSplit = async (client) => {
@@ -67,7 +66,7 @@ export default async function(assert) {
 
   const getObjectSplitTest = async (client) => {
     let result = await client.getObjectValue('obj_feature', {});
-    assert.equals(result, { 'key': 'value' });
+    assert.looseEquals(result, { 'key': 'value' });
   };
 
   const getMetadataNameTest = async (client) => {
@@ -80,7 +79,7 @@ export default async function(assert) {
     assert.equals(details.reason, 'TARGETING_MATCH');
     assert.equals(details.value, false);
     assert.equals(details.variant, 'off');
-    assert.equals(details.errorCode, null);
+    assert.equals(details.errorCode, undefined);
   };
 
   const getNumberDetailsTest = async (client) => {
@@ -89,7 +88,7 @@ export default async function(assert) {
     assert.equals(details.reason, 'TARGETING_MATCH');
     assert.equals(details.value, 32);
     assert.equals(details.variant, '32');
-    assert.equals(details.errorCode, null);
+    assert.equals(details.errorCode, undefined);
   };
 
   const getStringDetailsTest = async (client) => {
@@ -98,16 +97,16 @@ export default async function(assert) {
     assert.equals(details.reason, 'TARGETING_MATCH');
     assert.equals(details.value, 'off');
     assert.equals(details.variant, 'off');
-    assert.equals(details.errorCode, null);
+    assert.equals(details.errorCode, undefined);
   };
 
   const getObjectDetailsTest = async (client) => {
     let details = await client.getObjectDetails('obj_feature', {});
     assert.equals(details.flagKey, 'obj_feature');
     assert.equals(details.reason, 'TARGETING_MATCH');
-    assert.equals(details.value, { key: 'value' });
+    assert.looseEquals(details.value, { key: 'value' });
     assert.equals(details.variant, '{"key": "value"}');
-    assert.equals(details.errorCode, null);
+    assert.equals(details.errorCode, undefined);
   };
 
   const getBooleanFailTest = async (client) => {
@@ -118,7 +117,7 @@ export default async function(assert) {
     assert.equals(details.value, false);
     assert.equals(details.errorCode, 'PARSE_ERROR');
     assert.equals(details.reason, 'ERROR');
-    assert.equals(details.variant, null);
+    assert.equals(details.variant, undefined);
   };
 
   const getNumberFailTest = async (client) => {
@@ -129,7 +128,7 @@ export default async function(assert) {
     assert.equals(details.value, 10);
     assert.equals(details.errorCode, 'PARSE_ERROR');
     assert.equals(details.reason, 'ERROR');
-    assert.equals(details.variant, null);
+    assert.equals(details.variant, undefined);
   };
 
   const getObjectFailTest = async (client) => {
@@ -141,48 +140,49 @@ export default async function(assert) {
     assert.equals(details.value, defaultObject);
     assert.equals(details.errorCode, 'PARSE_ERROR');
     assert.equals(details.reason, 'ERROR');
-    assert.equals(details.variant, null);
+    assert.equals(details.variant, undefined);
   };
 
   let splitClient = SplitFactory({
     core: {
       authorizationKey: 'localhost'
     },
-    features: './split.yaml'
+    features: './split.yaml',
+    debug: 'WARN'
   }).client();
 
   let provider = new OpenFeatureSplitProvider({splitClient});
-//   OpenFeature.setProvider(provider);
+  OpenFeature.setProvider(provider);
 
   let client = OpenFeature.getClient('test');
   let evaluationContext = {
     targetingKey: 'key'
   };
-  client.evaluationContext = evaluationContext;
+  client.context = evaluationContext;
 
-  useDefaultTest(client);
- 
-  missingTargetingKeyTest(client);
-  
-  getControlVariantNonExistentSplit(client);
+  await useDefaultTest(client);
+  await missingTargetingKeyTest(client);  
+  await getControlVariantNonExistentSplit(client);
 
-  getBooleanSplitTest(client);
-  getBooleanSplitWithKeyTest(client);
+  await getBooleanSplitTest(client);
+  await getBooleanSplitWithKeyTest(client);
  
-  getStringSplitTest(client);
-  getNumberSplitTest(client);
-  getObjectSplitTest(client);
+  await getStringSplitTest(client);
+  await getNumberSplitTest(client);
+  await getObjectSplitTest(client);
  
-  getMetadataNameTest(client);
+  await getMetadataNameTest(client);
  
-  getBooleanDetailsTest(client);
-  getNumberDetailsTest(client);
-  getStringDetailsTest(client);
-  getObjectDetailsTest(client);
+  await getBooleanDetailsTest(client);
+  await getNumberDetailsTest(client);
+  await getStringDetailsTest(client);
+  await getObjectDetailsTest(client);
  
-  getBooleanFailTest(client);
-  getNumberFailTest(client);
-  getObjectFailTest(client);
+  await getBooleanFailTest(client);
+  await getNumberFailTest(client);
+  await getObjectFailTest(client);
+
+  splitClient.destroy(); // Shut down open handles
 
   assert.end();
 }

@@ -5,5 +5,4 @@ import providerSuite from './nodeSuites/provider.spec.js';
 
 tape('## OpenFeature NodeJS Split Provider - tests', async function (assert) {
   assert.test('Client Tests', clientSuite);
-  assert.test('Provider Tests', providerSuite);
 });

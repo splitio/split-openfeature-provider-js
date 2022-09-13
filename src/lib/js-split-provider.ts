@@ -1,4 +1,4 @@
-import { EvaluationContext, Provider, ResolutionDetails, TypeMismatchError, ParseError } from '@openfeature/nodejs-sdk';
+import { EvaluationContext, Provider, ResolutionDetails, ParseError, FlagNotFoundError, OpenFeatureError, StandardResolutionReasons } from '@openfeature/nodejs-sdk';
 import SplitIO from '@splitsoftware/splitio/types/splitio';
 
 /**
@@ -12,7 +12,7 @@ export interface SplitProviderOptions {
 }
 
 type Consumer = {
-  key: string;
+  key: string | undefined;
   attributes: SplitIO.Attributes;
 };
 
@@ -42,7 +42,7 @@ export class OpenFeatureSplitProvider implements Provider {
 
   async resolveBooleanEvaluation(
     flagKey: string,
-    _: boolean,
+    defaultValue: boolean,
     context: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
     const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
@@ -68,11 +68,11 @@ export class OpenFeatureSplitProvider implements Provider {
         value = false;
         break;
       case 'control':
-        console.log(`${this.metadata.name} provider returned control treatment for ${flagKey}`)
-        value = false;
+        value = defaultValue;
+        details.reason = 'FLAG_NOT_FOUND';
         break;
       default:
-        throw new TypeMismatchError(`Invalid boolean value for ${details.value}`);
+        throw new ParseError(`Invalid boolean value for ${details.value}`);
     }
     return { ...details, value };
   }
@@ -82,7 +82,11 @@ export class OpenFeatureSplitProvider implements Provider {
     _: string,
     context: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
-    return this.evaluateTreatment(flagKey, this.transformContext(context));
+    const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
+    if (details.value == 'control') {
+      throw new FlagNotFoundError(`Got error for split ${flagKey}`);
+    }
+    return details;
   }
 
   async resolveNumberEvaluation(
@@ -104,21 +108,34 @@ export class OpenFeatureSplitProvider implements Provider {
   }
 
   private async evaluateTreatment(flagKey: string, consumer: Consumer): Promise<ResolutionDetails<string>> {
-    await this.initialized;
-    const value = this.client.getTreatment(consumer.key, flagKey, consumer.attributes);
-    return { value };
+    if (!consumer.key) {
+      const details: ResolutionDetails<string> = {
+        value: 'control',
+        variant: 'control',
+        reason: StandardResolutionReasons.ERROR,
+        errorCode: 'TARGETING_KEY_MISSING'
+      }
+      return details;
+    } else {
+      await this.initialized;
+      const value = this.client.getTreatment(consumer.key, flagKey, consumer.attributes);
+      const details: ResolutionDetails<string> = {
+        value: value,
+        variant: value,
+        reason: StandardResolutionReasons.TARGETING_MATCH
+      };
+      return details;
+    }
   }
 
   //Transform the context into an object useful for the Split API, an key string with arbitrary Split "Attributes".
   private transformContext(context: EvaluationContext): Consumer {
-    {
-      const { targetingKey, ...attributes } = context;
-      return {
-        key: targetingKey || 'anonymous',
-        // Stringify context objects include date.
-        attributes: JSON.parse(JSON.stringify(attributes)),
-      };
-    }
+    const { targetingKey, ...attributes } = context;
+    return {
+      key: targetingKey,
+      // Stringify context objects include date.
+      attributes: JSON.parse(JSON.stringify(attributes)),
+    };
   }
 
   private parseValidNumber(stringValue: string | undefined) {
@@ -127,7 +144,7 @@ export class OpenFeatureSplitProvider implements Provider {
     }
     const result = Number.parseFloat(stringValue);
     if (Number.isNaN(result)) {
-      throw new TypeMismatchError(`Invalid numeric value ${stringValue}`);
+      throw new ParseError(`Invalid numeric value ${stringValue}`);
     }
     return result;
   }
@@ -140,7 +157,7 @@ export class OpenFeatureSplitProvider implements Provider {
     try {
       const value = JSON.parse(stringValue);
       if (typeof value !== 'object') {
-        throw new TypeMismatchError(
+        throw new ParseError(
           `Flag value ${stringValue} had unexpected type ${typeof value}, expected "object"`
         );
       }
