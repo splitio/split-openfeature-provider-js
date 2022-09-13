@@ -44,35 +44,19 @@ export default async function(assert) {
     assert.equal(1, 1);
   };
 
-  const evalIntNullEmptyTest = () => {
+  const evalNumberNullEmptyTest = () => {
     assert.equal(1, 1);
   };
 
-  const evalIntControlTest = () => {
+  const evalNumberControlTest = () => {
     assert.equal(1, 1);
   };
 
-  const evalIntRegularTest = () => {
+  const evalNumberRegularTest = () => {
     assert.equal(1, 1);
   };
 
-  const evalIntErrorTest = () => {
-    assert.equal(1, 1);
-  };
-
-  const evalDoubleNullEmptyTest = () => {
-    assert.equal(1, 1);
-  };
-
-  const evalDoubleControlTest = () => {
-    assert.equal(1, 1);
-  };
-
-  const evalDoubleRegularTest = () => {
-    assert.equal(1, 1);
-  };
-
-  const evalDoubleErrorTest = () => {
+  const evalNumberErrorTest = () => {
     assert.equal(1, 1);
   };
 
@@ -110,15 +94,10 @@ export default async function(assert) {
   evalStringControlTest();
   evalStringRegularTest();
 
-  evalIntNullEmptyTest();
-  evalIntControlTest();
-  evalIntRegularTest();
-  evalIntErrorTest();
-
-  evalDoubleNullEmptyTest();
-  evalDoubleControlTest();
-  evalDoubleRegularTest();
-  evalDoubleErrorTest();
+  evalNumberNullEmptyTest();
+  evalNumberControlTest();
+  evalNumberRegularTest();
+  evalNumberErrorTest();
 
   evalStructureNullEmptyTest();
   evalStructureControlTest();
