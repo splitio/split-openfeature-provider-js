@@ -1,4 +1,4 @@
-const OpenFeature = require('@openfeature/nodejs-sdk').OpenFeature;
+const OpenFeature = require('@openfeature/js-sdk').OpenFeature;
 const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
 import { OpenFeatureSplitProvider } from '../..';
 
@@ -148,7 +148,7 @@ export default async function(assert) {
       authorizationKey: 'localhost'
     },
     features: './split.yaml',
-    debug: 'WARN'
+    debug: 'DEBUG'
   }).client();
 
   let provider = new OpenFeatureSplitProvider({splitClient});
@@ -158,7 +158,7 @@ export default async function(assert) {
   let evaluationContext = {
     targetingKey: 'key'
   };
-  client.context = evaluationContext;
+  client.setContext(evaluationContext);
 
   await useDefaultTest(client);
   await missingTargetingKeyTest(client);  

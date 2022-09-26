@@ -3,3 +3,6 @@
 1.0.1
 - Fixes issues with flag details and error codes in negative cases, adds unit tests
 - Up to date with spec 0.4.0 and @openfeature/nodejs-sdk v0.3.2
+1.0.2
+- Changes name from Node-specific implementation to generic JSON
+- Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0

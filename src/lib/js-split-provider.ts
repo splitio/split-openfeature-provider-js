@@ -1,12 +1,6 @@
-import { EvaluationContext, Provider, ResolutionDetails, ParseError, FlagNotFoundError, OpenFeatureError, StandardResolutionReasons } from '@openfeature/nodejs-sdk';
+import { EvaluationContext, Provider, ResolutionDetails, ParseError, FlagNotFoundError, JsonValue, OpenFeatureError, StandardResolutionReasons } from '@openfeature/js-sdk';
 import SplitIO from '@splitsoftware/splitio/types/splitio';
 
-/**
- * This simple provider implementation relies on storing all data as strings in the treatment value.
- *
- * It may be more idiomatic to only rely on that for the "isEnabled" calls,
- * and for all values store the data in teh associated "split config" JSON.
- */
 export interface SplitProviderOptions {
   splitClient: SplitIO.IClient;
 }
@@ -16,11 +10,6 @@ type Consumer = {
   attributes: SplitIO.Attributes;
 };
 
-/**
- * NOTE: This is an unofficial provider that was created for demonstration
- * purposes only. The playground environment will be updated to use official
- * providers once they're available.
- */
 export class OpenFeatureSplitProvider implements Provider {
   metadata = {
     name: 'split',
@@ -30,8 +19,6 @@ export class OpenFeatureSplitProvider implements Provider {
 
   constructor(options: SplitProviderOptions) {
     this.client = options.splitClient;
-    // we don't expose any init events at the moment (we might later) so for now, lets create a private
-    // promise to await into before we evaluate any flags.
     this.initialized = new Promise((resolve) => {
       this.client.on(this.client.Event.SDK_READY, () => {
         console.log(`${this.metadata.name} provider initialized`);
@@ -98,7 +85,7 @@ export class OpenFeatureSplitProvider implements Provider {
     return { ...details, value: this.parseValidNumber(details.value) };
   }
 
-  async resolveObjectEvaluation<U extends object>(
+  async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     _: U,
     context: EvaluationContext
@@ -149,7 +136,7 @@ export class OpenFeatureSplitProvider implements Provider {
     return result;
   }
 
-  private parseValidJsonObject<T extends Object>(stringValue: string | undefined): T {
+  private parseValidJsonObject<T extends JsonValue>(stringValue: string | undefined): T {
     if (stringValue === undefined) {
       throw new ParseError(`Invalid 'undefined' JSON value.`);
     }
