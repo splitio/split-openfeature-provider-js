@@ -13,7 +13,7 @@ Below is a simple example that describes the instantiation of the Split Provider
 ```js
 const OpenFeature = require('@openfeature/js-sdk').OpenFeature;
 const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
-const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-nodejs-split-provider').OpenFeatureSplitProvider;
+const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-provider').OpenFeatureSplitProvider;
 
 splitClient = SplitFactory({core: {authorizationKey: 'localhost'}}).client();
 provider = new OpenFeatureSplitProvider({splitClient});
