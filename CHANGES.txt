@@ -6,3 +6,6 @@
 1.0.2
 - Changes name from Node-specific implementation to generic JSON
 - Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0
+1.0.3
+- Adds types definitions for TypeScript
+- Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0

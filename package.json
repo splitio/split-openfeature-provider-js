@@ -1,6 +1,6 @@
 {
   "name": "@splitsoftware/openfeature-js-split-provider",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Split OpenFeature Provider",
   "files": [
     "README.md",
@@ -13,8 +13,8 @@
     "src"
   ],
   "repository": "splitio/openfeature-split-provider-js",
-  "homepage": "https://github.com/splitio/openfeature-split-provider-nodejs#readme",
-  "bugs": "https://github.com/splitio/openfeature-split-provider-nodejs/issues",
+  "homepage": "https://github.com/splitio/openfeature-split-provider-js#readme",
+  "bugs": "https://github.com/splitio/openfeature-split-provider-js/issues",
   "license": "Apache-2.0",
   "author": "Josh Sirota <josh.sirota@split.io>",
   "contributors": [
