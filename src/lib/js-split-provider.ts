@@ -1,5 +1,14 @@
-import { EvaluationContext, Provider, ResolutionDetails, ParseError, FlagNotFoundError, JsonValue, OpenFeatureError, StandardResolutionReasons } from '@openfeature/js-sdk';
-import SplitIO from '@splitsoftware/splitio/types/splitio';
+import {
+  EvaluationContext,
+  Provider,
+  ResolutionDetails,
+  ParseError,
+  FlagNotFoundError,
+  JsonValue,
+  TargetingKeyMissingError,
+  StandardResolutionReasons,
+} from "@openfeature/js-sdk";
+import type SplitIO from "@splitsoftware/splitio/types/splitio";
 
 export interface SplitProviderOptions {
   splitClient: SplitIO.IClient;
@@ -10,9 +19,11 @@ type Consumer = {
   attributes: SplitIO.Attributes;
 };
 
+const CONTROL_VALUE_ERROR_MESSAGE = "Received the 'control' value from Split.";
+
 export class OpenFeatureSplitProvider implements Provider {
   metadata = {
-    name: 'split',
+    name: "split",
   };
   private initialized: Promise<void>;
   private client: SplitIO.IClient;
@@ -29,23 +40,26 @@ export class OpenFeatureSplitProvider implements Provider {
 
   async resolveBooleanEvaluation(
     flagKey: string,
-    defaultValue: boolean,
+    _: boolean,
     context: EvaluationContext
   ): Promise<ResolutionDetails<boolean>> {
-    const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
+    const details = await this.evaluateTreatment(
+      flagKey,
+      this.transformContext(context)
+    );
 
     let value: boolean;
     switch (details.value as unknown) {
-      case 'on':
+      case "on":
         value = true;
         break;
-      case 'off':
+      case "off":
         value = false;
         break;
-      case 'true':
+      case "true":
         value = true;
         break;
-      case 'false':
+      case "false":
         value = false;
         break;
       case true:
@@ -54,10 +68,8 @@ export class OpenFeatureSplitProvider implements Provider {
       case false:
         value = false;
         break;
-      case 'control':
-        value = defaultValue;
-        details.reason = 'FLAG_NOT_FOUND';
-        break;
+      case "control":
+        throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
       default:
         throw new ParseError(`Invalid boolean value for ${details.value}`);
     }
@@ -69,9 +81,12 @@ export class OpenFeatureSplitProvider implements Provider {
     _: string,
     context: EvaluationContext
   ): Promise<ResolutionDetails<string>> {
-    const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
-    if (details.value == 'control') {
-      throw new FlagNotFoundError(`Got error for split ${flagKey}`);
+    const details = await this.evaluateTreatment(
+      flagKey,
+      this.transformContext(context)
+    );
+    if (details.value === "control") {
+      throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
     }
     return details;
   }
@@ -81,7 +96,10 @@ export class OpenFeatureSplitProvider implements Provider {
     _: number,
     context: EvaluationContext
   ): Promise<ResolutionDetails<number>> {
-    const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
+    const details = await this.evaluateTreatment(
+      flagKey,
+      this.transformContext(context)
+    );
     return { ...details, value: this.parseValidNumber(details.value) };
   }
 
@@ -90,26 +108,32 @@ export class OpenFeatureSplitProvider implements Provider {
     _: U,
     context: EvaluationContext
   ): Promise<ResolutionDetails<U>> {
-    const details = await this.evaluateTreatment(flagKey, this.transformContext(context));
+    const details = await this.evaluateTreatment(
+      flagKey,
+      this.transformContext(context)
+    );
     return { ...details, value: this.parseValidJsonObject(details.value) };
   }
 
-  private async evaluateTreatment(flagKey: string, consumer: Consumer): Promise<ResolutionDetails<string>> {
+  private async evaluateTreatment(
+    flagKey: string,
+    consumer: Consumer
+  ): Promise<ResolutionDetails<string>> {
     if (!consumer.key) {
-      const details: ResolutionDetails<string> = {
-        value: 'control',
-        variant: 'control',
-        reason: StandardResolutionReasons.ERROR,
-        errorCode: 'TARGETING_KEY_MISSING'
-      }
-      return details;
+      throw new TargetingKeyMissingError(
+        "The Split provider requires a targeting key."
+      );
     } else {
       await this.initialized;
-      const value = this.client.getTreatment(consumer.key, flagKey, consumer.attributes);
+      const value = this.client.getTreatment(
+        consumer.key,
+        flagKey,
+        consumer.attributes
+      );
       const details: ResolutionDetails<string> = {
         value: value,
         variant: value,
-        reason: StandardResolutionReasons.TARGETING_MATCH
+        reason: StandardResolutionReasons.TARGETING_MATCH,
       };
       return details;
     }
@@ -136,14 +160,16 @@ export class OpenFeatureSplitProvider implements Provider {
     return result;
   }
 
-  private parseValidJsonObject<T extends JsonValue>(stringValue: string | undefined): T {
+  private parseValidJsonObject<T extends JsonValue>(
+    stringValue: string | undefined
+  ): T {
     if (stringValue === undefined) {
       throw new ParseError(`Invalid 'undefined' JSON value.`);
     }
     // we may want to allow the parsing to be customized.
     try {
       const value = JSON.parse(stringValue);
-      if (typeof value !== 'object') {
+      if (typeof value !== "object") {
         throw new ParseError(
           `Flag value ${stringValue} had unexpected type ${typeof value}, expected "object"`
         );
