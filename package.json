@@ -1,6 +1,6 @@
 {
   "name": "@splitsoftware/openfeature-js-split-provider",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Split OpenFeature Provider",
   "files": [
     "README.md",
