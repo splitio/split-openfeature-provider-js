@@ -37,8 +37,8 @@ export default async function(assert) {
   const getControlVariantNonExistentSplit = async (client) => {
     let details = await client.getBooleanDetails('non-existent-feature', false);
     assert.equals(details.value, false);
-    assert.equals(details.variant, 'control');
-    assert.equals(details.reason, 'FLAG_NOT_FOUND');
+    assert.equals(details.errorCode, 'FLAG_NOT_FOUND');
+    assert.equals(details.reason, 'ERROR');
   };
 
   const getBooleanSplitTest = async (client) => {
