@@ -7,7 +7,7 @@ import {
   JsonValue,
   TargetingKeyMissingError,
   StandardResolutionReasons,
-} from "@openfeature/js-sdk";
+} from "@openfeature/server-sdk";
 import type SplitIO from "@splitsoftware/splitio/types/splitio";
 
 export interface SplitProviderOptions {
