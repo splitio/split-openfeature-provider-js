@@ -12,3 +12,6 @@
 1.0.4
 - Fixes issue with TS build
 - Up to date with spec 0.5.0 and @openfeature/js-sdk 0.5.0
+1.1.0
+- Uses renamed @openfeature/js-sdk to @openfeature/server-sdk
+- Up to date with spec 0.8.0 and @openfeature/server-sdk 1.18.0

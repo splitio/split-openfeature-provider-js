@@ -1,4 +1,4 @@
-const OpenFeature = require('@openfeature/js-sdk').OpenFeature;
+const OpenFeature = require('@openfeature/server-sdk').OpenFeature;
 const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
 import { OpenFeatureSplitProvider } from '../..';
 
