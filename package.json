@@ -39,13 +39,12 @@
     "tape": "4.13.2",
     "tape-catch": "1.0.6",
     "ts-node": "^10.5.0",
-    "typescript": "^4.9.5",
-    "@types/node": "16.11.7"
+    "typescript": "^4.9.5"
   },
   "scripts": {
-    "build-esm": "rimraf es && npx tsc --project tsconfig.json -outDir es",
+    "build-esm": "rimraf es && tsc -outDir es",
     "postbuild-esm": "cross-env NODE_ENV=es node scripts/copy.packages.json.js && ./scripts/build_esm_replace_imports.sh",
-    "build-cjs": "rimraf lib && npx tsc --project tsconfig.json -outDir lib -m CommonJS",
+    "build-cjs": "rimraf lib && tsc -outDir lib -m CommonJS",
     "postbuild-cjs": "cross-env NODE_ENV=cjs node scripts/copy.packages.json.js && ./scripts/build_cjs_replace_imports.sh",
     "build": "rimraf lib es && npm run build-cjs && npm run build-esm",
     "check": "npm run check:version",
@@ -63,8 +62,5 @@
       "karma-tap",
       "karma-webpack"
     ]
-  },
-  "overrides": {
-    "@types/node": "16.11.7"
   }
 }
