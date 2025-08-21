@@ -7,7 +7,7 @@ import {
   JsonValue,
   TargetingKeyMissingError,
   StandardResolutionReasons,
-} from "@openfeature/js-sdk";
+} from "@openfeature/server-sdk";
 import type SplitIO from "@splitsoftware/splitio/types/splitio";
 
 export interface SplitProviderOptions {
@@ -31,10 +31,15 @@ export class OpenFeatureSplitProvider implements Provider {
   constructor(options: SplitProviderOptions) {
     this.client = options.splitClient;
     this.initialized = new Promise((resolve) => {
-      this.client.on(this.client.Event.SDK_READY, () => {
+      if ((this.client as any).__getStatus().isReady) {
         console.log(`${this.metadata.name} provider initialized`);
         resolve();
-      });
+      } else {
+        this.client.on(this.client.Event.SDK_READY, () => {
+          console.log(`${this.metadata.name} provider initialized`);
+          resolve();
+        });
+      }
     });
   }
 

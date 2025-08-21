@@ -19,12 +19,12 @@ npm install @splitsoftware/openfeature-js-split-provider
 ### Confirm peer dependencies are installed
 ```sh
 npm install @splitsoftware/splitio
-npm install @openfeature/js-sdk
+npm install @openfeature/server-sdk
 ```
 
 ### Register the Split provider with OpenFeature
 ```js
-const OpenFeature = require('@openfeature/js-sdk').OpenFeature;
+const OpenFeature = require('@openfeature/server-sdk').OpenFeature;
 const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
 const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-provider').OpenFeatureSplitProvider;
 
