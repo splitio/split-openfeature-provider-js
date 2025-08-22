@@ -1,1 +1,1 @@
-export * from './lib/js-split-provider';
+export * from './lib/js-split-provider.js';
