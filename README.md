@@ -31,7 +31,7 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 const authorizationKey = 'your auth key'
 const splitClient = SplitFactory({core: {authorizationKey}}).client();
 const provider = new OpenFeatureSplitProvider({splitClient});
-openFeature.setProvider(provider);
+OpenFeature.setProvider(provider);
 ```
 
 ## Use of OpenFeature with Split
