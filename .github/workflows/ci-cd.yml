@@ -2,7 +2,7 @@ name: ci-cd
 on:
   pull_request:
     branches:
-      - master
+      - main
       - development
   push:
     branches:
