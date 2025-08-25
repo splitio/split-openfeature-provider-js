@@ -1,16 +1,12 @@
-name: ci-cd
+name: test
 on:
   pull_request:
     branches:
       - '*'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.run_number || github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
-  id-token: write
 
 jobs:
   build:
@@ -18,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
