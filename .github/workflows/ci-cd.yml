@@ -1,0 +1,49 @@
+name: ci-cd
+on:
+  pull_request:
+    branches:
+      - master
+      - development
+  push:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.run_number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: npm ci
+        run: npm ci
+
+      - name: npm ts tests
+        run: npm run test-ts-decls
+
+      - name: npm check
+        run: npm run check
+
+      - name: npm test-browser
+        run: npm run test-browser
+
+      - name: npm test-node
+        run: npm run test-node
+
+      - name: npm build
+        run: BUILD_BRANCH=$(echo "${GITHUB_REF#refs/heads/}") npm run build
