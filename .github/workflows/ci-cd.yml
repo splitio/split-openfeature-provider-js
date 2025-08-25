@@ -32,11 +32,5 @@ jobs:
       - name: npm check
         run: npm run check
 
-      - name: npm test-browser
-        run: npm run test-browser
-
-      - name: npm test-node
-        run: npm run test-node
-
-      - name: npm build
-        run: BUILD_BRANCH=$(echo "${GITHUB_REF#refs/heads/}") npm run build
+      - name: npm test
+        run: npm run test
