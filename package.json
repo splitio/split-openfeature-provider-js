@@ -17,20 +17,31 @@
   "bugs": "https://github.com/splitio/openfeature-split-provider-js/issues",
   "license": "Apache-2.0",
   "author": "Josh Sirota <josh.sirota@split.io>",
-  "main": "src/index.ts",
-  "types": "types",
+  "contributors": [
+    "Nicolas Zelaya <nicolas.zelaya@harness.io> (https://github.com/NicoZelaya)",
+    "Emiliano Sanchez <emiliano.sanchez@harness.io> (https://github.com/EmilianoSanchez)",
+    "Emmanuel Zamora <emmanuel.zamora@harness.io> (https://github.com/ZamoraEmmanuel)",
+    "SDK Team <sdks@harness.io>"
+  ],
+  "main": "lib/index.js",
+  "types": "types/index.d.ts",
   "engines": {
-    "npm": ">=3",
-    "node": ">=6"
+    "node": ">=14"
+  },
+  "exports": {
+    ".": {
+      "require": "./lib/index.js",
+      "import": "./es/index.js"
+    }
   },
   "dependencies": {},
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.18.0",
-    "@splitsoftware/splitio": "^11.4.0"
+    "@openfeature/server-sdk": "^1.19.0",
+    "@splitsoftware/splitio": "^11.4.1"
   },
   "devDependencies": {
-    "@openfeature/server-sdk": "^1.18.0",
-    "@splitsoftware/splitio": "^11.4.0",
+    "@openfeature/server-sdk": "^1.19.0",
+    "@splitsoftware/splitio": "^11.4.1",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "replace": "^1.2.1",
@@ -55,12 +66,5 @@
     "test": "cross-env NODE_ENV=test tape -r ./ts-node.register src/__tests__/node.spec.js | tap-min",
     "publish:rc": "npm run check && npm run build && npm publish --tag canary",
     "publish:stable": "npm run check && npm run build && npm publish"
-  },
-  "greenkeeper": {
-    "ignore": [
-      "karma",
-      "karma-tap",
-      "karma-webpack"
-    ]
   }
 }
