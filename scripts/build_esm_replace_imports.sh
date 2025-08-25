@@ -4,7 +4,7 @@
 replace '@splitsoftware/splitio-commons/src' '@splitsoftware/splitio-commons/esm' ./es -r
 
 # Fix import extension in es/index.js
-sed -i '' -e "s|from './lib/js-split-provider'|from './lib/js-split-provider.js'|" es/index.js
+replace './lib/js-split-provider' './lib/js-split-provider.js' ./es/index.js -r
 
 if [ $? -eq 0 ]
 then
