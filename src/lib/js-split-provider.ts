@@ -20,6 +20,7 @@ type Consumer = {
 };
 
 const CONTROL_VALUE_ERROR_MESSAGE = "Received the 'control' value from Split.";
+const CONTROL_TREATMENT = "control";
 
 export class OpenFeatureSplitProvider implements Provider {
   metadata = {
@@ -53,32 +54,15 @@ export class OpenFeatureSplitProvider implements Provider {
       this.transformContext(context)
     );
 
-    let value: boolean;
-    switch (details.value as unknown) {
-      case "on":
-        value = true;
-        break;
-      case "off":
-        value = false;
-        break;
-      case "true":
-        value = true;
-        break;
-      case "false":
-        value = false;
-        break;
-      case true:
-        value = true;
-        break;
-      case false:
-        value = false;
-        break;
-      case "control":
-        throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
-      default:
-        throw new ParseError(`Invalid boolean value for ${details.value}`);
+    if ( details.value === "on" || details.value === "true" ) {
+      return { ...details, value: true };
     }
-    return { ...details, value };
+
+    if ( details.value === "off" || details.value === "false" ) {
+      return { ...details, value: false };
+    }
+
+    throw new ParseError(`Invalid boolean value for ${details.value}`);
   }
 
   async resolveStringEvaluation(
@@ -90,9 +74,6 @@ export class OpenFeatureSplitProvider implements Provider {
       flagKey,
       this.transformContext(context)
     );
-    if (details.value === "control") {
-      throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
-    }
     return details;
   }
 
@@ -130,14 +111,19 @@ export class OpenFeatureSplitProvider implements Provider {
       );
     } else {
       await this.initialized;
-      const value = this.client.getTreatment(
+      const {treatment: value, config}: SplitIO.TreatmentWithConfig = this.client.getTreatmentWithConfig(
         consumer.key,
         flagKey,
         consumer.attributes
       );
+      if (value === CONTROL_TREATMENT) {
+        throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
+      }
+      const flagMetadata = config ? JSON.parse(config) : undefined;
       const details: ResolutionDetails<string> = {
         value: value,
         variant: value,
+        flagMetadata: flagMetadata,
         reason: StandardResolutionReasons.TARGETING_MATCH,
       };
       return details;

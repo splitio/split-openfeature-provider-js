@@ -60,9 +60,6 @@
     "build": "rimraf lib es && npm run build-cjs && npm run build-esm",
     "check": "npm run check:version",
     "check:version": "cross-env NODE_ENV=test tape -r ./ts-node.register src/settings/__tests__/defaults.spec.js",
-    "pretest-ts-decls": "npm run build-esm && npm run build-cjs && npm link",
-    "test-ts-decls": "./scripts/ts-tests.sh",
-    "posttest-ts-decls": "npm unlink && npm install",
     "test": "cross-env NODE_ENV=test tape -r ./ts-node.register src/__tests__/node.spec.js | tap-min",
     "publish:rc": "npm run check && npm run build && npm publish --tag canary",
     "publish:stable": "npm run check && npm run build && npm publish"
