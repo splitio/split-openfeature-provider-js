@@ -49,11 +49,11 @@ export default async function(assert) {
   const getBooleanSplitWithKeyTest = async (client) => {
     let result = await client.getBooleanDetails('my_feature', false);
     assert.equals(result.value, true);
-    assert.looseEquals(result.flagMetadata, { desc: 'this applies only to ON treatment' });
+    assert.looseEquals(result.flagMetadata, { config: '{"desc" : "this applies only to ON treatment"}' });
 
     result = await client.getBooleanDetails('my_feature', true, { targetingKey: 'randomKey' });
     assert.equals(result.value, false);
-    assert.looseEquals(result.flagMetadata, {});
+    assert.looseEquals(result.flagMetadata, { config: ''});
   };
 
   const getStringSplitTest = async (client) => {

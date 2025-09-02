@@ -1,3 +1,6 @@
+import { ParseError } from "@openfeature/server-sdk";
+import { makeProviderWithSpy } from "../testUtils";
+
 export default async function(assert) {
 
   const shouldFailWithBadApiKeyTest = () => {
@@ -79,6 +82,63 @@ export default async function(assert) {
   const evalStructureErrorTest = () => {
     assert.equal(1, 1);
   };
+
+ const trackingSuite = (t) => {
+
+  t.test("track: throws when missing eventName", async (t) => {
+    const { provider } = makeProviderWithSpy();
+    try {
+      await provider.track("", { targetingKey: "u1", trafficType: "user" }, {});
+      t.fail("expected ParseError for eventName");
+    } catch (e) {
+      t.ok(e instanceof ParseError, "got ParseError");
+    }
+    t.end();
+  });
+
+  t.test("track: throws when missing trafficType", async (t) => {
+    const { provider } = makeProviderWithSpy();
+    try {
+      await provider.track("evt", { targetingKey: "u1" }, {});
+      t.fail("expected ParseError for trafficType");
+    } catch (e) {
+      t.ok(e instanceof ParseError, "got ParseError");
+    }
+    t.end();
+  });
+
+   t.test("track: ok without details", async (t) => {
+    const { provider, calls } = makeProviderWithSpy();
+    await provider.track("view", { targetingKey: "u1", trafficType: "user" }, null);
+
+    t.equal(calls.count, 1, "Split track called once");
+    t.deepEqual(
+      calls.args,
+      ["u1", "user", "view", 0, {}],
+      "called with key, trafficType, eventName, 0, {}"
+    );
+    t.end();
+  });
+
+  t.test("track: ok with details", async (t) => {
+    const { provider, calls } = makeProviderWithSpy();
+    await provider.track(
+      "purchase",
+      { targetingKey: "u1", trafficType: "user" },
+      { value: 9.99, properties: { plan: "pro", beta: true } }
+    );
+
+    t.equal(calls.count, 1, "Split track called once");
+    t.equal(calls.args[0], "u1");
+    t.equal(calls.args[1], "user");
+    t.equal(calls.args[2], "purchase");
+    t.equal(calls.args[3], 9.99);
+    t.deepEqual(calls.args[4], { plan: "pro", beta: true });
+    t.end();
+  });
+}
+
+  trackingSuite(assert);
 
   shouldFailWithBadApiKeyTest();
 
