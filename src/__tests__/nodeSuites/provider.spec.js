@@ -114,7 +114,7 @@ export default async function(assert) {
     t.equal(calls.count, 1, "Split track called once");
     t.deepEqual(
       calls.args,
-      ["u1", "user", "view", 0, {}],
+      ["u1", "user", "view", undefined, {}],
       "called with key, trafficType, eventName, 0, {}"
     );
     t.end();

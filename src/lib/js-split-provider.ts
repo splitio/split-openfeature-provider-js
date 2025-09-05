@@ -54,17 +54,17 @@ export class OpenFeatureSplitProvider implements Provider {
       flagKey,
       this.transformContext(context)
     );
-    const flagName = details.value.toLowerCase();
+    const treatment = details.value.toLowerCase();
 
-    if ( flagName === "on" || flagName === "true" ) {
+    if ( treatment === "on" || treatment === "true" ) {
       return { ...details, value: true };
     }
 
-    if ( flagName === "off" || flagName === "false" ) {
+    if ( treatment === "off" || treatment === "false" ) {
       return { ...details, value: false };
     }
 
-    throw new ParseError(`Invalid boolean value for ${flagName}`);
+    throw new ParseError(`Invalid boolean value for ${treatment}`);
   }
 
   async resolveStringEvaluation(
@@ -156,7 +156,7 @@ export class OpenFeatureSplitProvider implements Provider {
     if (trafficType == null || trafficType === "")
       throw new ParseError("Missing trafficType variable, required to track");
 
-    let value = 0;
+    let value;
     let properties: SplitIO.Properties = {};
     if (details != null) {
       if (details.value != null) {
