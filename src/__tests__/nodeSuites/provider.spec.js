@@ -214,7 +214,7 @@ describe('provider tests', () => {
         const trackSpy = jest.spyOn(splitClient, 'track');
         await provider.track("view", { targetingKey: "u1", trafficType: "user" }, null);
         expect(trackSpy).toHaveBeenCalledTimes(1);
-        expect(trackSpy).toHaveBeenCalledWith("u1", "user", "view", 0, {});
+        expect(trackSpy).toHaveBeenCalledWith("u1", "user", "view", undefined, {});
     });
     
     test('track: ok with details', async () => {
