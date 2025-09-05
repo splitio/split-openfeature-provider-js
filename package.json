@@ -58,10 +58,8 @@
     "build-cjs": "rimraf lib && tsc -outDir lib -m CommonJS",
     "postbuild-cjs": "cross-env NODE_ENV=cjs node scripts/copy.packages.json.js && ./scripts/build_cjs_replace_imports.sh",
     "build": "rimraf lib es && npm run build-cjs && npm run build-esm",
-    "check": "npm run check:version",
-    "check:version": "cross-env NODE_ENV=test tape -r ./ts-node.register src/settings/__tests__/defaults.spec.js",
     "test": "cross-env NODE_ENV=test jest",
-    "publish:rc": "npm run check && npm run build && npm publish --tag canary",
-    "publish:stable": "npm run check && npm run build && npm publish"
+    "publish:rc": "npm run test && npm run build && npm publish --tag canary",
+    "publish:stable": "npm run test && npm run build && npm publish"
   }
 }
