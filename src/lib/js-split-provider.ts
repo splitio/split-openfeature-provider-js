@@ -8,6 +8,7 @@ import {
   TargetingKeyMissingError,
   StandardResolutionReasons,
   TrackingEventDetails,
+  InvalidContextError,
 } from "@openfeature/server-sdk";
 import type SplitIO from "@splitsoftware/splitio/types/splitio";
 
@@ -111,25 +112,30 @@ export class OpenFeatureSplitProvider implements Provider {
       throw new TargetingKeyMissingError(
         "The Split provider requires a targeting key."
       );
-    } else {
-      await this.initialized;
-      const {treatment: value, config}: SplitIO.TreatmentWithConfig = this.client.getTreatmentWithConfig(
-        consumer.key,
-        flagKey,
-        consumer.attributes
-      );
-      if (value === CONTROL_TREATMENT) {
-        throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
-      }
-      const flagMetadata = { config: config ? config : '' };
-      const details: ResolutionDetails<string> = {
-        value: value,
-        variant: value,
-        flagMetadata: flagMetadata,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
-      return details;
     }
+    if (flagKey == null || flagKey === "") {
+      throw new FlagNotFoundError(
+        "flagKey must be a non-empty string"
+      );
+    }
+
+    await this.initialized;
+    const { treatment: value, config }: SplitIO.TreatmentWithConfig = this.client.getTreatmentWithConfig(
+      consumer.key,
+      flagKey,
+      consumer.attributes
+    );
+    if (value === CONTROL_TREATMENT) {
+      throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
+    }
+    const flagMetadata = { config: config ? config : '' };
+    const details: ResolutionDetails<string> = {
+      value: value,
+      variant: value,
+      flagMetadata: flagMetadata,
+      reason: StandardResolutionReasons.TARGETING_MATCH,
+    };
+    return details;
   }
 
   async track(
@@ -141,7 +147,7 @@ export class OpenFeatureSplitProvider implements Provider {
     // targetingKey is always required
     const { targetingKey } = context;
     if (targetingKey == null || targetingKey === "")
-      throw new TargetingKeyMissingError();
+      throw new TargetingKeyMissingError("Missing targetingKey, required to track");
 
     // eventName is always required
     if (trackingEventName == null || trackingEventName === "")
@@ -154,7 +160,7 @@ export class OpenFeatureSplitProvider implements Provider {
         ? ttVal
         : null;
     if (trafficType == null || trafficType === "")
-      throw new ParseError("Missing trafficType variable, required to track");
+      throw new InvalidContextError("Missing trafficType variable, required to track");
 
     let value;
     let properties: SplitIO.Properties = {};

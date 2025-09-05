@@ -1,190 +1,180 @@
-const OpenFeature = require('@openfeature/server-sdk').OpenFeature;
-const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
-import { OpenFeatureSplitProvider } from '../..';
+import { OpenFeatureSplitProvider } from "../../lib/js-split-provider";
+import { getSplitClient } from "../testUtils";
 
-export default async function(assert) {
+import { OpenFeature } from "@openfeature/server-sdk";
 
-  const useDefaultTest = async (client) => {
+describe('client tests', () => {
+
+  beforeEach(() => {
+      splitClient = getSplitClient();
+      provider = new OpenFeatureSplitProvider({ splitClient });
+
+      OpenFeature.setProvider(provider);
+
+      client = OpenFeature.getClient('test');
+      let evaluationContext = {
+        targetingKey: 'key'
+      };
+      client.setContext(evaluationContext);
+  });
+  afterEach(() => {
+      splitClient.destroy();
+      provider = undefined;
+  });
+
+  let client;
+  let splitClient;
+  let provider;
+  
+  test('use default test', async () => {
     let flagName = 'random-non-existent-feature';
 
     let result = await client.getBooleanValue(flagName, false);
-    assert.equal(result, false);
+    expect(result).toBe(false);
 
     let result2 = await client.getBooleanValue(flagName, true);
-    assert.equal(result2, true);
+    expect(result2).toBe(true);
 
     let defaultString = 'blah';
     let resultString = await client.getStringValue(flagName, defaultString);
-    assert.equals(resultString, defaultString);
+    expect(resultString).toBe(defaultString);
 
     let defaultInt = 100;
     let resultInt = await client.getNumberValue(flagName, defaultInt);
-    assert.equals(resultInt, defaultInt);
+    expect(resultInt).toBe(defaultInt);
 
     let defaultStructure = {
       foo: 'bar'
     };
     let resultStructure = await client.getObjectValue(flagName, defaultStructure);
-    assert.equals(resultStructure, defaultStructure);
-  };
+    expect(resultStructure).toEqual(defaultStructure);
+  });
 
-  const missingTargetingKeyTest = async (client) => {
+  test('missing targetingKey test', async () => {
     let details = await client.getBooleanDetails('non-existent-feature', false, { targetingKey: undefined });
-    assert.equals(details.value, false);
-    assert.equals(details.errorCode, 'TARGETING_KEY_MISSING');
-  };
+    expect(details.value).toBe(false);
+    expect(details.errorCode).toBe('TARGETING_KEY_MISSING');
+  });
 
-  const getControlVariantNonExistentSplit = async (client) => {
+  test('evaluate Boolean control test', async () => {
     let details = await client.getBooleanDetails('non-existent-feature', false);
-    assert.equals(details.value, false);
-    assert.equals(details.errorCode, 'FLAG_NOT_FOUND');
-    assert.equals(details.reason, 'ERROR');
-  };
+    expect(details.value).toBe(false);
+    expect(details.errorCode).toBe('FLAG_NOT_FOUND');
+    expect(details.reason).toBe('ERROR');
+  });
 
-  const getBooleanSplitTest = async (client) => {
+  test('evaluate Boolean test', async () => {
     let result = await client.getBooleanValue('some_other_feature', true);
-    assert.equals(result, false);
-  };
+    expect(result).toBe(false);
+  });
 
-  const getBooleanSplitWithKeyTest = async (client) => {
+  test('evaluate Boolean details test', async () => {
     let result = await client.getBooleanDetails('my_feature', false);
-    assert.equals(result.value, true);
-    assert.looseEquals(result.flagMetadata, { config: '{"desc" : "this applies only to ON treatment"}' });
+    expect(result.value).toBe(true);
+    expect(result.flagMetadata).toEqual({ config: '{"desc" : "this applies only to ON treatment"}' });
 
     result = await client.getBooleanDetails('my_feature', true, { targetingKey: 'randomKey' });
-    assert.equals(result.value, false);
-    assert.looseEquals(result.flagMetadata, { config: ''});
-  };
+    expect(result.value).toBe(false);
+    expect(result.flagMetadata).toEqual({ config: '' });
+  });
 
-  const getStringSplitTest = async (client) => {
+  test('evaluate String test', async () => {
     let result = await client.getStringValue('some_other_feature', 'on');
-    assert.equals(result, 'off');
-  };
+    expect(result).toBe('off');
+  });
 
-  const getNumberSplitTest = async (client) => {
+  test('evaluate String details test', async () => {
+    let result = await client.getStringDetails('my_feature', 'off');
+    expect(result.value).toBe('on');
+    expect(result.flagMetadata).toEqual({ config: '{"desc" : "this applies only to ON treatment"}' });
+
+    result = await client.getStringDetails('my_feature', 'on', { targetingKey: 'randomKey' });
+    expect(result.value).toBe('off');
+    expect(result.flagMetadata).toEqual({ config: '' });
+  });
+
+  test('evaluate Number test', async () => {
     let result = await client.getNumberValue('int_feature', 0);
-    assert.equals(result, 32);
-  };
+    expect(result).toBe(32);
+  });
 
-  const getObjectSplitTest = async (client) => {
+  test('evaluate Object test', async () => {
     let result = await client.getObjectValue('obj_feature', {});
-    assert.looseEquals(result, { 'key': 'value' });
-  };
+    expect(result).toEqual({ key: 'value' });
+  });
 
-  const getMetadataNameTest = async (client) => {
-    assert.equals(client.metadata.name, 'test');
-  };
+  test('evaluate Metadata name test', async () => {
+    expect(client.metadata.name).toBe('test');
+  });
 
-  const getBooleanDetailsTest = async (client) => {
+  test('evaluate Boolean details test', async () => {
     let details = await client.getBooleanDetails('some_other_feature', true);
-    assert.equals(details.flagKey, 'some_other_feature');
-    assert.equals(details.reason, 'TARGETING_MATCH');
-    assert.equals(details.value, false);
-    assert.equals(details.variant, 'off');
-    assert.equals(details.errorCode, undefined);
-  };
+    expect(details.flagKey).toBe('some_other_feature');
+    expect(details.reason).toBe('TARGETING_MATCH');
+    expect(details.value).toBe(false);
+    expect(details.variant).toBe('off');
+    expect(details.errorCode).toBeUndefined();
+  });
 
-  const getNumberDetailsTest = async (client) => {
+  test('evaluate Number details test', async () => {
     let details = await client.getNumberDetails('int_feature', 0);
-    assert.equals(details.flagKey, 'int_feature');
-    assert.equals(details.reason, 'TARGETING_MATCH');
-    assert.equals(details.value, 32);
-    assert.equals(details.variant, '32');
-    assert.equals(details.errorCode, undefined);
-  };
+    expect(details.flagKey).toBe('int_feature');
+    expect(details.reason).toBe('TARGETING_MATCH');
+    expect(details.value).toBe(32);
+    expect(details.variant).toBe('32');
+    expect(details.errorCode).toBeUndefined();
+  });
 
-  const getStringDetailsTest = async (client) => {
+  test('evaluate String details test', async () => {
     let details = await client.getStringDetails('some_other_feature', 'blah');
-    assert.equals(details.flagKey, 'some_other_feature');
-    assert.equals(details.reason, 'TARGETING_MATCH');
-    assert.equals(details.value, 'off');
-    assert.equals(details.variant, 'off');
-    assert.equals(details.errorCode, undefined);
-  };
+    expect(details.flagKey).toBe('some_other_feature');
+    expect(details.reason).toBe('TARGETING_MATCH');
+    expect(details.value).toBe('off');
+    expect(details.variant).toBe('off');
+    expect(details.errorCode).toBeUndefined();
+  });
 
-  const getObjectDetailsTest = async (client) => {
+  test('evaluate Object details test', async () => {
     let details = await client.getObjectDetails('obj_feature', {});
-    assert.equals(details.flagKey, 'obj_feature');
-    assert.equals(details.reason, 'TARGETING_MATCH');
-    assert.looseEquals(details.value, { key: 'value' });
-    assert.equals(details.variant, '{"key": "value"}');
-    assert.equals(details.errorCode, undefined);
-  };
+    expect(details.flagKey).toBe('obj_feature');
+    expect(details.reason).toBe('TARGETING_MATCH');
+    expect(details.value).toEqual({ key: 'value' });
+    expect(details.variant).toBe('{"key": "value"}');
+    expect(details.errorCode).toBeUndefined();
+  });
 
-  const getBooleanFailTest = async (client) => {
+  test('evaluate Boolean fail test', async () => {
     let value = await client.getBooleanValue('obj_feature', false);
-    assert.equals(value, false);
+    expect(value).toBe(false);
 
     let details = await client.getBooleanDetails('obj_feature', false);
-    assert.equals(details.value, false);
-    assert.equals(details.errorCode, 'PARSE_ERROR');
-    assert.equals(details.reason, 'ERROR');
-    assert.equals(details.variant, undefined);
-  };
+    expect(details.value).toBe(false);
+    expect(details.errorCode).toBe('PARSE_ERROR');
+    expect(details.reason).toBe('ERROR');
+    expect(details.variant).toBeUndefined();
+  });
 
-  const getNumberFailTest = async (client) => {
+  test('evaluate Number fail test', async () => {
     let value = await client.getNumberValue('obj_feature', 10);
-    assert.equals(value, 10);
+    expect(value).toBe(10);
 
     let details = await client.getNumberDetails('obj_feature', 10);
-    assert.equals(details.value, 10);
-    assert.equals(details.errorCode, 'PARSE_ERROR');
-    assert.equals(details.reason, 'ERROR');
-    assert.equals(details.variant, undefined);
-  };
+    expect(details.value).toBe(10);
+    expect(details.errorCode).toBe('PARSE_ERROR');
+    expect(details.reason).toBe('ERROR');
+    expect(details.variant).toBeUndefined();
+  });
 
-  const getObjectFailTest = async (client) => {
+  test('evaluate Object fail test', async () => {
     let defaultObject = { foo: 'bar' };
     let value = await client.getObjectValue('int_feature', defaultObject);
-    assert.equals(value, defaultObject);
+    expect(value).toEqual(defaultObject);
 
     let details = await client.getObjectDetails('int_feature', defaultObject);
-    assert.equals(details.value, defaultObject);
-    assert.equals(details.errorCode, 'PARSE_ERROR');
-    assert.equals(details.reason, 'ERROR');
-    assert.equals(details.variant, undefined);
-  };
+    expect(details.value).toEqual(defaultObject);
+    expect(details.errorCode).toBe('PARSE_ERROR');
+    expect(details.reason).toBe('ERROR');
+    expect(details.variant).toBeUndefined();
+  });
 
-  let splitClient = SplitFactory({
-    core: {
-      authorizationKey: 'localhost'
-    },
-    features: './split.yaml',
-    debug: 'DEBUG'
-  }).client();
-
-  let provider = new OpenFeatureSplitProvider({splitClient});
-  OpenFeature.setProvider(provider);
-
-  let client = OpenFeature.getClient('test');
-  let evaluationContext = {
-    targetingKey: 'key'
-  };
-  client.setContext(evaluationContext);
-
-  await useDefaultTest(client);
-  await missingTargetingKeyTest(client);  
-  await getControlVariantNonExistentSplit(client);
-
-  await getBooleanSplitTest(client);
-  await getBooleanSplitWithKeyTest(client);
- 
-  await getStringSplitTest(client);
-  await getNumberSplitTest(client);
-  await getObjectSplitTest(client);
- 
-  await getMetadataNameTest(client);
- 
-  await getBooleanDetailsTest(client);
-  await getNumberDetailsTest(client);
-  await getStringDetailsTest(client);
-  await getObjectDetailsTest(client);
- 
-  await getBooleanFailTest(client);
-  await getNumberFailTest(client);
-  await getObjectFailTest(client);
-
-  splitClient.destroy(); // Shut down open handles
-
-  assert.end();
-}
+})
