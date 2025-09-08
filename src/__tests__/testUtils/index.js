@@ -1,3 +1,5 @@
+import { OpenFeatureSplitProvider } from "../..";
+
 const DEFAULT_ERROR_MARGIN = 50; // 0.05 secs
 
 /**
@@ -66,4 +68,24 @@ export function url(settings, target) {
     return `${settings.urls.streaming}${target}`;
   }
   return `${settings.urls.sdk}${target}`;
+}
+
+
+/**
+ * Create a spy for the OpenFeatureSplitProvider.
+ * @returns {provider: OpenFeatureSplitProvider, calls: {count: number, args: any[]}}
+ */
+export function makeProviderWithSpy() {
+  const calls = { count: 0, args: null };
+  const track = (...args) => { calls.count++; calls.args = args; return true; };
+
+  const splitClient = {
+    __getStatus: () => ({ isReady: true }),
+    on: () => {},
+    Event: { SDK_READY: "SDK_READY" },
+    track,
+    getTreatmentWithConfig: () => ({ treatment: "on", config: "" }),
+  };
+
+  return { provider: new OpenFeatureSplitProvider({ splitClient }), calls };
 }
