@@ -59,7 +59,7 @@
     "postbuild-cjs": "cross-env NODE_ENV=cjs node scripts/copy.packages.json.js && ./scripts/build_cjs_replace_imports.sh",
     "build": "rimraf lib es && npm run build-cjs && npm run build-esm",
     "test": "cross-env NODE_ENV=test jest",
-    "publish:rc": "npm run test && npm run build && npm publish --tag canary",
+    "publish:rc": "npm run test && npm run build && npm publish --tag rc",
     "publish:stable": "npm run test && npm run build && npm publish"
   }
 }
