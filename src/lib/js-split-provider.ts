@@ -9,8 +9,8 @@ import {
   StandardResolutionReasons,
   TrackingEventDetails,
   InvalidContextError,
-} from "@openfeature/server-sdk";
-import type SplitIO from "@splitsoftware/splitio/types/splitio";
+} from '@openfeature/server-sdk';
+import type SplitIO from '@splitsoftware/splitio/types/splitio';
 
 export interface SplitProviderOptions {
   splitClient: SplitIO.IClient;
@@ -21,12 +21,12 @@ type Consumer = {
   attributes: SplitIO.Attributes;
 };
 
-const CONTROL_VALUE_ERROR_MESSAGE = "Received the 'control' value from Split.";
-const CONTROL_TREATMENT = "control";
+const CONTROL_VALUE_ERROR_MESSAGE = 'Received the "control" value from Split.';
+const CONTROL_TREATMENT = 'control';
 
 export class OpenFeatureSplitProvider implements Provider {
   metadata = {
-    name: "split",
+    name: 'split',
   };
   private initialized: Promise<void>;
   private client: SplitIO.IClient;
@@ -34,6 +34,7 @@ export class OpenFeatureSplitProvider implements Provider {
   constructor(options: SplitProviderOptions) {
     this.client = options.splitClient;
     this.initialized = new Promise((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((this.client as any).__getStatus().isReady) {
         console.log(`${this.metadata.name} provider initialized`);
         resolve();
@@ -57,11 +58,11 @@ export class OpenFeatureSplitProvider implements Provider {
     );
     const treatment = details.value.toLowerCase();
 
-    if ( treatment === "on" || treatment === "true" ) {
+    if ( treatment === 'on' || treatment === 'true' ) {
       return { ...details, value: true };
     }
 
-    if ( treatment === "off" || treatment === "false" ) {
+    if ( treatment === 'off' || treatment === 'false' ) {
       return { ...details, value: false };
     }
 
@@ -110,12 +111,12 @@ export class OpenFeatureSplitProvider implements Provider {
   ): Promise<ResolutionDetails<string>> {
     if (!consumer.key) {
       throw new TargetingKeyMissingError(
-        "The Split provider requires a targeting key."
+        'The Split provider requires a targeting key.'
       );
     }
-    if (flagKey == null || flagKey === "") {
+    if (flagKey == null || flagKey === '') {
       throw new FlagNotFoundError(
-        "flagKey must be a non-empty string"
+        'flagKey must be a non-empty string'
       );
     }
 
@@ -146,21 +147,21 @@ export class OpenFeatureSplitProvider implements Provider {
 
     // targetingKey is always required
     const { targetingKey } = context;
-    if (targetingKey == null || targetingKey === "")
-      throw new TargetingKeyMissingError("Missing targetingKey, required to track");
+    if (targetingKey == null || targetingKey === '')
+      throw new TargetingKeyMissingError('Missing targetingKey, required to track');
 
     // eventName is always required
-    if (trackingEventName == null || trackingEventName === "")
-      throw new ParseError("Missing eventName, required to track");
+    if (trackingEventName == null || trackingEventName === '')
+      throw new ParseError('Missing eventName, required to track');
 
     // trafficType is always required
-    const ttVal = context["trafficType"];
+    const ttVal = context['trafficType'];
     const trafficType =
-      ttVal != null && typeof ttVal === "string" && ttVal.trim() !== ""
+      ttVal != null && typeof ttVal === 'string' && ttVal.trim() !== ''
         ? ttVal
         : null;
-    if (trafficType == null || trafficType === "")
-      throw new InvalidContextError("Missing trafficType variable, required to track");
+    if (trafficType == null || trafficType === '')
+      throw new InvalidContextError('Missing trafficType variable, required to track');
 
     let value;
     let properties: SplitIO.Properties = {};
@@ -176,7 +177,7 @@ export class OpenFeatureSplitProvider implements Provider {
     this.client.track(targetingKey, trafficType, trackingEventName, value, properties);
   }
 
-  //Transform the context into an object useful for the Split API, an key string with arbitrary Split "Attributes".
+  //Transform the context into an object useful for the Split API, an key string with arbitrary Split 'Attributes'.
   private transformContext(context: EvaluationContext): Consumer {
     const { targetingKey, ...attributes } = context;
     return {
@@ -206,7 +207,7 @@ export class OpenFeatureSplitProvider implements Provider {
     // we may want to allow the parsing to be customized.
     try {
       const value = JSON.parse(stringValue);
-      if (typeof value !== "object") {
+      if (typeof value !== 'object') {
         throw new ParseError(
           `Flag value ${stringValue} had unexpected type ${typeof value}, expected "object"`
         );

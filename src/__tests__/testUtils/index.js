@@ -1,6 +1,4 @@
-import { OpenFeatureSplitProvider } from "../..";
-import { OpenFeature } from "@openfeature/server-sdk";
-import { SplitFactory } from "@splitsoftware/splitio";
+import { SplitFactory } from '@splitsoftware/splitio';
 
 const DEFAULT_ERROR_MARGIN = 50; // 0.05 secs
 
