@@ -1,31 +1,32 @@
-import { OpenFeatureSplitProvider } from "../../lib/js-split-provider";
-import { getSplitClient } from "../testUtils";
+/* eslint-disable jest/no-conditional-expect */
+import { OpenFeatureSplitProvider } from '../../lib/js-split-provider';
+import { getSplitClient } from '../testUtils';
 
-import { OpenFeature } from "@openfeature/server-sdk";
+import { OpenFeature } from '@openfeature/server-sdk';
 
 describe('client tests', () => {
-
-  beforeEach(() => {
-      splitClient = getSplitClient();
-      provider = new OpenFeatureSplitProvider({ splitClient });
-
-      OpenFeature.setProvider(provider);
-
-      client = OpenFeature.getClient('test');
-      let evaluationContext = {
-        targetingKey: 'key'
-      };
-      client.setContext(evaluationContext);
-  });
-  afterEach(() => {
-      splitClient.destroy();
-      provider = undefined;
-  });
 
   let client;
   let splitClient;
   let provider;
-  
+
+  beforeEach(() => {
+    splitClient = getSplitClient();
+    provider = new OpenFeatureSplitProvider({ splitClient });
+
+    OpenFeature.setProvider(provider);
+
+    client = OpenFeature.getClient('test');
+    let evaluationContext = {
+      targetingKey: 'key'
+    };
+    client.setContext(evaluationContext);
+  });
+  afterEach(() => {
+    splitClient.destroy();
+    provider = undefined;
+  });
+
   test('use default test', async () => {
     let flagName = 'random-non-existent-feature';
 
@@ -107,7 +108,7 @@ describe('client tests', () => {
     expect(client.metadata.name).toBe('test');
   });
 
-  test('evaluate Boolean details test', async () => {
+  test('evaluate Boolean without details test', async () => {
     let details = await client.getBooleanDetails('some_other_feature', true);
     expect(details.flagKey).toBe('some_other_feature');
     expect(details.reason).toBe('TARGETING_MATCH');
@@ -125,7 +126,7 @@ describe('client tests', () => {
     expect(details.errorCode).toBeUndefined();
   });
 
-  test('evaluate String details test', async () => {
+  test('evaluate String without details test', async () => {
     let details = await client.getStringDetails('some_other_feature', 'blah');
     expect(details.flagKey).toBe('some_other_feature');
     expect(details.reason).toBe('TARGETING_MATCH');
@@ -179,40 +180,40 @@ describe('client tests', () => {
 
   test('track: throws when missing eventName', async () => {
     try {
-      await client.track("", { targetingKey: "u1", trafficType: "user" }, {});
+      await client.track('', { targetingKey: 'u1', trafficType: 'user' }, {});
     } catch (e) {
-      expect(e.message).toBe("Missing eventName, required to track");
-      expect(e.code).toBe("PARSE_ERROR");
+      expect(e.message).toBe('Missing eventName, required to track');
+      expect(e.code).toBe('PARSE_ERROR');
     }
   });
 
   test('track: throws when missing targetingKey', async () => {
     try {
-      await client.track("my-event", { trafficType: "user" }, {});
+      await client.track('my-event', { trafficType: 'user' }, {});
     } catch (e) {
-      expect(e.message).toBe("Missing targetingKey, required to track");
-      expect(e.code).toBe("PARSE_ERROR");
+      expect(e.message).toBe('Missing targetingKey, required to track');
+      expect(e.code).toBe('PARSE_ERROR');
     }
   });
 
   test('track: throws when missing trafficType', async () => {
     try {
-      await client.track("my-event", { targetingKey: "u1" }, {});
+      await client.track('my-event', { targetingKey: 'u1' }, {});
     } catch (e) {
-      expect(e.message).toBe("Missing trafficType variable, required to track");
-      expect(e.code).toBe("INVALID_CONTEXT");
+      expect(e.message).toBe('Missing trafficType variable, required to track');
+      expect(e.code).toBe('INVALID_CONTEXT');
     }
   });
 
   test('track: without value', async () => {
     const trackSpy = jest.spyOn(splitClient, 'track');
-    await client.track("my-event", { targetingKey: "u1", trafficType: "user" }, { properties: { prop1: "value1" } });
-    expect(trackSpy).toHaveBeenCalledWith("u1", "user", "my-event", undefined, {  prop1: "value1" });
+    await client.track('my-event', { targetingKey: 'u1', trafficType: 'user' }, { properties: { prop1: 'value1' } });
+    expect(trackSpy).toHaveBeenCalledWith('u1', 'user', 'my-event', undefined, {  prop1: 'value1' });
   });
 
   test('track: with value', async () => {
     const trackSpy = jest.spyOn(splitClient, 'track');
-    await client.track("my-event", { targetingKey: "u1", trafficType: "user" }, { value: 9.99, properties: { prop1: "value1" } });
-    expect(trackSpy).toHaveBeenCalledWith("u1", "user", "my-event", 9.99, {  prop1: "value1" });
+    await client.track('my-event', { targetingKey: 'u1', trafficType: 'user' }, { value: 9.99, properties: { prop1: 'value1' } });
+    expect(trackSpy).toHaveBeenCalledWith('u1', 'user', 'my-event', 9.99, {  prop1: 'value1' });
   });
 });

@@ -32,7 +32,6 @@ export default class EventSource {
     this.url = url;
     this.withCredentials = eventSourceInitDict.withCredentials;
     this.readyState = 0;
-    // eslint-disable-next-line no-undef
     this.__emitter = new EventEmitter();
     this.__eventSourceInitDict = arguments[1];
     sources[url] = this;
