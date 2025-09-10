@@ -1,18 +1,28 @@
+1.2.0 (September 9, 2025)
+  - Up to date with @openfeature/server-sdk 1.19.0
+  - Added tracking support
+  - Added “evaluate with details” support
+
 1.1.0 (June 16, 2025)
-- Uses renamed @openfeature/js-sdk to @openfeature/server-sdk
-- Up to date with spec 0.8.0 and @openfeature/server-sdk 1.18.0
-- Uses split sdk 11.4.0
+  - Uses renamed @openfeature/js-sdk to @openfeature/server-sdk
+  - Up to date with spec 0.8.0 and @openfeature/server-sdk 1.18.0
+  - Uses split sdk 11.4.0
+
 1.0.4
-- Fixes issue with TS build
-- Up to date with spec 0.5.0 and @openfeature/js-sdk 0.5.0
+  - Fixes issue with TS build
+  - Up to date with spec 0.5.0 and @openfeature/js-sdk 0.5.0
+
 1.0.3
-- Adds types definitions for TypeScript
-- Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0
+  - Adds types definitions for TypeScript
+  - Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0
+
 1.0.2
-- Changes name from Node-specific implementation to generic JSON
-- Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0
+  - Changes name from Node-specific implementation to generic JSON
+  - Up to date with spec 0.4.0 and @openfeature/js-sdk 0.4.0
+
 1.0.1
-- Fixes issues with flag details and error codes in negative cases, adds unit tests
-- Up to date with spec 0.4.0 and @openfeature/nodejs-sdk v0.3.2
+  - Fixes issues with flag details and error codes in negative cases, adds unit tests
+  - Up to date with spec 0.4.0 and @openfeature/nodejs-sdk v0.3.2
+    
 1.0.0
-- First release. Up to date with spec 0.4.0, and @openfeature/nodejs-sdk v0.2.0
+  - First release. Up to date with spec 0.4.0, and @openfeature/nodejs-sdk v0.2.0

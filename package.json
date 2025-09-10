@@ -1,6 +1,6 @@
 {
   "name": "@splitsoftware/openfeature-js-split-provider",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Split OpenFeature Provider",
   "files": [
     "README.md",
@@ -34,23 +34,29 @@
       "import": "./es/index.js"
     }
   },
-  "dependencies": {},
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.19.0",
     "@splitsoftware/splitio": "^11.4.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.35.0",
     "@openfeature/server-sdk": "^1.19.0",
     "@splitsoftware/splitio": "^11.4.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.3.1",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
+    "eslint": "^9.35.0",
+    "eslint-plugin-jest": "^28.14.0",
+    "globals": "^16.3.0",
+    "jest": "^29.7.0",
+    "jiti": "^2.5.1",
     "replace": "^1.2.1",
     "rimraf": "^3.0.2",
-    "tap-min": "^2.0.0",
-    "tape": "4.13.2",
-    "tape-catch": "1.0.6",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.5.0",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "typescript-eslint": "^8.43.0"
   },
   "scripts": {
     "build-esm": "rimraf es && tsc -outDir es",
@@ -58,10 +64,10 @@
     "build-cjs": "rimraf lib && tsc -outDir lib -m CommonJS",
     "postbuild-cjs": "cross-env NODE_ENV=cjs node scripts/copy.packages.json.js && ./scripts/build_cjs_replace_imports.sh",
     "build": "rimraf lib es && npm run build-cjs && npm run build-esm",
-    "check": "npm run check:version",
-    "check:version": "cross-env NODE_ENV=test tape -r ./ts-node.register src/settings/__tests__/defaults.spec.js",
-    "test": "cross-env NODE_ENV=test tape -r ./ts-node.register src/__tests__/node.spec.js | tap-min",
-    "publish:rc": "npm run check && npm run build && npm publish --tag canary",
-    "publish:stable": "npm run check && npm run build && npm publish"
+    "check": "npm run check:lint",
+    "check:lint": "eslint src",
+    "test": "cross-env NODE_ENV=test jest",
+    "publish:rc": "npm run check && npm run test && npm run build && npm publish --tag rc",
+    "publish:stable": "npm run check && npm run test && npm run build && npm publish"
   }
 }

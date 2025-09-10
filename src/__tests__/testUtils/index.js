@@ -1,4 +1,4 @@
-import { OpenFeatureSplitProvider } from "../..";
+import { SplitFactory } from '@splitsoftware/splitio';
 
 const DEFAULT_ERROR_MARGIN = 50; // 0.05 secs
 
@@ -72,20 +72,14 @@ export function url(settings, target) {
 
 
 /**
- * Create a spy for the OpenFeatureSplitProvider.
- * @returns {provider: OpenFeatureSplitProvider, calls: {count: number, args: any[]}}
+ * get a Split client in localhost mode for testing purposes
  */
-export function makeProviderWithSpy() {
-  const calls = { count: 0, args: null };
-  const track = (...args) => { calls.count++; calls.args = args; return true; };
-
-  const splitClient = {
-    __getStatus: () => ({ isReady: true }),
-    on: () => {},
-    Event: { SDK_READY: "SDK_READY" },
-    track,
-    getTreatmentWithConfig: () => ({ treatment: "on", config: "" }),
-  };
-
-  return { provider: new OpenFeatureSplitProvider({ splitClient }), calls };
+export function getSplitClient(apiKey = 'localhost') {
+  return SplitFactory({
+    core: {
+      authorizationKey: apiKey
+    },
+    features: './split.yaml',
+    debug: 'DEBUG'
+  }).client();
 }
