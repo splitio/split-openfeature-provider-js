@@ -60,7 +60,6 @@ const context: EvaluationContext = {
   targetingKey: 'TARGETING_KEY',
 };
 OpenFeatureAPI.getInstance().setCtx(context)
-````
 If the context was set at the client or api level, it is not required to provide it during flag evaluation.
 
 ## Evaluate with details
