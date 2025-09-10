@@ -1,5 +1,5 @@
 /* eslint-disable jest/no-conditional-expect */
-import { getSplitClient } from '../testUtils';
+import { getLocalHostSplitClient } from '../testUtils';
 import { OpenFeatureSplitProvider } from '../../lib/js-split-provider';
 
 describe('provider tests', () => {
@@ -8,7 +8,7 @@ describe('provider tests', () => {
   let provider;
 
   beforeEach(() => {
-    splitClient = getSplitClient();
+    splitClient = getLocalHostSplitClient();
     provider = new OpenFeatureSplitProvider({ splitClient });
   });
 
