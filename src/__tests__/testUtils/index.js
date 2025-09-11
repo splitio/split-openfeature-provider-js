@@ -95,7 +95,6 @@ const config = {
       authorizationKey: 'localhost'
     },
     features: './split.yaml',
-    debug: 'DEBUG'
   }
 /**
  * get a Split client in localhost mode for testing purposes
