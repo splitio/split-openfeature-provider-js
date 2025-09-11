@@ -15,6 +15,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        
+      - name: Install Redis
+        run: |
+          sudo add-apt-repository ppa:redislabs/redis
+          sudo apt-get install -y redis-tools redis-server
+
+      - name: Check Redis
+        run: redis-cli ping
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

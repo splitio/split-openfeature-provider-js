@@ -70,16 +70,40 @@ export function url(settings, target) {
   return `${settings.urls.sdk}${target}`;
 }
 
-
-/**
- * get a Split client in localhost mode for testing purposes
- */
-export function getSplitClient(apiKey = 'localhost') {
-  return SplitFactory({
+const getRedisConfig = (redisPort) => ({
     core: {
-      authorizationKey: apiKey
+      authorizationKey: 'SOME SDK KEY' // in consumer mode, SDK key is only used to track and log warning regarding duplicated SDK instances
+    },
+    mode: 'consumer',
+    storage: {
+      type: 'REDIS',
+      prefix: 'REDIS_NODE_UT',
+      options: {
+        url: `redis://localhost:${redisPort}/0`
+      }
+    },
+    sync: {
+      impressionsMode: 'DEBUG'
+    },
+    startup: {
+      readyTimeout: 36000 // 10hs
+    }
+  });
+
+const config = {
+    core: {
+      authorizationKey: 'localhost'
     },
     features: './split.yaml',
     debug: 'DEBUG'
-  }).client();
+  }
+/**
+ * get a Split client in localhost mode for testing purposes
+ */
+export function getLocalHostSplitClient() {
+  return SplitFactory(config).client();
+}
+
+export function getRedisSplitClient(redisPort) {
+  return SplitFactory(getRedisConfig(redisPort)).client();
 }

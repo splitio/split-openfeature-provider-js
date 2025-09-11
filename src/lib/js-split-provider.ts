@@ -1,19 +1,22 @@
 import {
   EvaluationContext,
-  Provider,
-  ResolutionDetails,
-  ParseError,
   FlagNotFoundError,
-  JsonValue,
-  TargetingKeyMissingError,
-  StandardResolutionReasons,
-  TrackingEventDetails,
   InvalidContextError,
+  JsonValue,
+  OpenFeatureEventEmitter,
+  ParseError,
+  Provider,
+  ProviderEvents,
+  ResolutionDetails,
+  StandardResolutionReasons,
+  TargetingKeyMissingError,
+  TrackingEventDetails
 } from '@openfeature/server-sdk';
+import { SplitFactory } from '@splitsoftware/splitio';
 import type SplitIO from '@splitsoftware/splitio/types/splitio';
 
-export interface SplitProviderOptions {
-  splitClient: SplitIO.IClient;
+type SplitProviderOptions = {
+  splitClient: SplitIO.IClient | SplitIO.IAsyncClient;
 }
 
 type Consumer = {
@@ -29,10 +32,21 @@ export class OpenFeatureSplitProvider implements Provider {
     name: 'split',
   };
   private initialized: Promise<void>;
-  private client: SplitIO.IClient;
+  private client: SplitIO.IClient | SplitIO.IAsyncClient;
 
-  constructor(options: SplitProviderOptions) {
-    this.client = options.splitClient;
+  public readonly events = new OpenFeatureEventEmitter();
+
+  constructor(options: SplitProviderOptions | string) {
+
+    if (typeof(options) === 'string') {
+      const splitFactory = SplitFactory({core: { authorizationKey: options } });
+      this.client = splitFactory.client();
+    } else {
+      this.client = options.splitClient;
+    }
+    this.client.on(this.client.Event.SDK_UPDATE, (payload) => {
+      this.events.emit(ProviderEvents.ConfigurationChanged, payload)
+    });
     this.initialized = new Promise((resolve) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((this.client as any).__getStatus().isReady) {
@@ -121,7 +135,7 @@ export class OpenFeatureSplitProvider implements Provider {
     }
 
     await this.initialized;
-    const { treatment: value, config }: SplitIO.TreatmentWithConfig = this.client.getTreatmentWithConfig(
+    const { treatment: value, config }: SplitIO.TreatmentWithConfig = await this.client.getTreatmentWithConfig(
       consumer.key,
       flagKey,
       consumer.attributes
