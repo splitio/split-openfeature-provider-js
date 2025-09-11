@@ -107,3 +107,7 @@ export function getLocalHostSplitClient() {
 export function getRedisSplitClient(redisPort) {
   return SplitFactory(getRedisConfig(redisPort)).client();
 }
+
+export function getSplitFactory() {
+  return SplitFactory(config);
+}

@@ -36,16 +36,28 @@ export class OpenFeatureSplitProvider implements Provider {
 
   public readonly events = new OpenFeatureEventEmitter();
 
-  constructor(options: SplitProviderOptions | string) {
-
+  private getSplitClient(options: SplitProviderOptions | string | SplitIO.ISDK | SplitIO.IAsyncSDK) {
     if (typeof(options) === 'string') {
       const splitFactory = SplitFactory({core: { authorizationKey: options } });
-      this.client = splitFactory.client();
-    } else {
-      this.client = options.splitClient;
+      return splitFactory.client();
+    } 
+
+    let splitClient;
+    try {
+      splitClient = (options as SplitIO.ISDK | SplitIO.IAsyncSDK).client();
+    } catch {
+      splitClient = (options as SplitProviderOptions).splitClient
     }
-    this.client.on(this.client.Event.SDK_UPDATE, (payload) => {
-      this.events.emit(ProviderEvents.ConfigurationChanged, payload)
+
+    return splitClient;
+  }
+  
+  constructor(options: SplitProviderOptions | string | SplitIO.ISDK | SplitIO.IAsyncSDK) {
+
+    this.client = this.getSplitClient(options);
+
+    this.client.on(this.client.Event.SDK_UPDATE, () => {
+      this.events.emit(ProviderEvents.ConfigurationChanged)
     });
     this.initialized = new Promise((resolve) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,6 +201,10 @@ export class OpenFeatureSplitProvider implements Provider {
     } 
 
     this.client.track(targetingKey, trafficType, trackingEventName, value, properties);
+  }
+
+  async onClose?(): Promise<void> {
+    return this.client.destroy();
   }
 
   //Transform the context into an object useful for the Split API, an key string with arbitrary Split 'Attributes'.
