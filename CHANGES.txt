@@ -1,13 +1,10 @@
-1.2.0 (September 12, 2025)
-  - Up to date with @openfeature/server-sdk 1.19.0
-  - Added tracking support
-  - Added “evaluate with details” support
-  - Support provider initialization using splitFactory
-
-1.1.0 (June 16, 2025)
-  - Uses renamed @openfeature/js-sdk to @openfeature/server-sdk
-  - Up to date with spec 0.8.0 and @openfeature/server-sdk 1.18.0
-  - Uses split sdk 11.4.0
+1.1.0 (September 12, 2025)
+  - Updated @openfeature/server-sdk to 1.19.0
+  - Updated @splitsoftware/splitio to 11.4.1
+  - Added support for tracking feature
+  - Added support for evaluate with details feature
+  - Added support for provider initialization using splitFactory and apiKey
+  - Replace @openfeature/js-sdk with @openfeature/server-sdk
 
 1.0.4
   - Fixes issue with TS build
