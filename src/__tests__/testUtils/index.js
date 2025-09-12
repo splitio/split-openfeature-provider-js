@@ -95,7 +95,6 @@ const config = {
       authorizationKey: 'localhost'
     },
     features: './split.yaml',
-    debug: 'DEBUG'
   }
 /**
  * get a Split client in localhost mode for testing purposes
@@ -106,4 +105,8 @@ export function getLocalHostSplitClient() {
 
 export function getRedisSplitClient(redisPort) {
   return SplitFactory(getRedisConfig(redisPort)).client();
+}
+
+export function getSplitFactory() {
+  return SplitFactory(config);
 }

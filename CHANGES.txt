@@ -1,7 +1,8 @@
-1.2.0 (September 9, 2025)
+1.2.0 (September 12, 2025)
   - Up to date with @openfeature/server-sdk 1.19.0
   - Added tracking support
   - Added “evaluate with details” support
+  - Support provider initialization using splitFactory
 
 1.1.0 (June 16, 2025)
   - Uses renamed @openfeature/js-sdk to @openfeature/server-sdk

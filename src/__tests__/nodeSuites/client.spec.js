@@ -1,19 +1,31 @@
 /* eslint-disable jest/no-conditional-expect */
 import { OpenFeatureSplitProvider } from '../../lib/js-split-provider';
-import { getLocalHostSplitClient } from '../testUtils';
+import { getLocalHostSplitClient, getSplitFactory } from '../testUtils';
 
 import { OpenFeature } from '@openfeature/server-sdk';
 
-describe('client tests', () => {
+const cases = [
+  [
+    'openfeature client tests mode: splitClient',
+    () => ({ splitClient: getLocalHostSplitClient()}),
+    
+  ],
+  [
+    'openfeature client tests mode: splitFactory',
+    getSplitFactory
+  ],
+];
+
+describe.each(cases)('%s', (label, getOptions) => {
 
   let client;
-  let splitClient;
   let provider;
+  let options;
 
   beforeEach(() => {
-    splitClient = getLocalHostSplitClient();
-    provider = new OpenFeatureSplitProvider({ splitClient });
 
+    options = getOptions();
+    provider = new OpenFeatureSplitProvider(options);
     OpenFeature.setProvider(provider);
 
     client = OpenFeature.getClient('test');
@@ -22,9 +34,8 @@ describe('client tests', () => {
     };
     client.setContext(evaluationContext);
   });
-  afterEach(() => {
-    splitClient.destroy();
-    provider = undefined;
+  afterEach(async () => {
+    await OpenFeature.close();
   });
 
   test('use default test', async () => {
@@ -206,13 +217,13 @@ describe('client tests', () => {
   });
 
   test('track: without value', async () => {
-    const trackSpy = jest.spyOn(splitClient, 'track');
+    const trackSpy = jest.spyOn(options.splitClient ? options.splitClient : options.client(), 'track');
     await client.track('my-event', { targetingKey: 'u1', trafficType: 'user' }, { properties: { prop1: 'value1' } });
     expect(trackSpy).toHaveBeenCalledWith('u1', 'user', 'my-event', undefined, {  prop1: 'value1' });
   });
 
   test('track: with value', async () => {
-    const trackSpy = jest.spyOn(splitClient, 'track');
+    const trackSpy = jest.spyOn(options.splitClient ? options.splitClient : options.client(), 'track');
     await client.track('my-event', { targetingKey: 'u1', trafficType: 'user' }, { value: 9.99, properties: { prop1: 'value1' } });
     expect(trackSpy).toHaveBeenCalledWith('u1', 'user', 'my-event', 9.99, {  prop1: 'value1' });
   });

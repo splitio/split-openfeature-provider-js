@@ -1,20 +1,32 @@
 /* eslint-disable jest/no-conditional-expect */
-import { getLocalHostSplitClient } from '../testUtils';
+import { getLocalHostSplitClient, getSplitFactory } from '../testUtils';
 import { OpenFeatureSplitProvider } from '../../lib/js-split-provider';
 
-describe('provider tests', () => {
+const cases = [
+  [
+    'provider tests mode: splitClient',
+    () => ({ splitClient: getLocalHostSplitClient()}),
+    
+  ],
+  [
+    'provider tests mode: splitFactory',
+    getSplitFactory
+  ],
+];
 
-  let splitClient;
+describe.each(cases)('%s', (label, getOptions) => {
+
   let provider;
+  let options;
 
   beforeEach(() => {
-    splitClient = getLocalHostSplitClient();
-    provider = new OpenFeatureSplitProvider({ splitClient });
+    options = getOptions();
+    provider = new OpenFeatureSplitProvider(options);
   });
 
-  afterEach(() => {
-    splitClient.destroy();
-    provider = undefined;
+  afterEach(async () => {
+    jest.clearAllMocks()
+    await provider.onClose();
   });
 
   test('evaluate Boolean null/empty test', async () => {
@@ -210,14 +222,14 @@ describe('provider tests', () => {
   });
 
   test('track: ok without details', async () => {
-    const trackSpy = jest.spyOn(splitClient, 'track');
+    const trackSpy = jest.spyOn(options.splitClient ? options.splitClient : options.client(), 'track');
     await provider.track('view', { targetingKey: 'u1', trafficType: 'user' }, null);
     expect(trackSpy).toHaveBeenCalledTimes(1);
     expect(trackSpy).toHaveBeenCalledWith('u1', 'user', 'view', undefined, {});
   });
 
   test('track: ok with details', async () => {
-    const trackSpy = jest.spyOn(splitClient, 'track');
+    const trackSpy = jest.spyOn(options.splitClient ? options.splitClient : options.client(), 'track');
     await provider.track(
       'purchase',
       { targetingKey: 'u1', trafficType: 'user' },
