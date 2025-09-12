@@ -23,15 +23,13 @@ npm install @splitsoftware/splitio
 npm install @openfeature/server-sdk
 ```
 
-### Register the Split provider with OpenFeature using splitClient
+### Register the Split provider with OpenFeature using sdk apiKey
 ```js
 const OpenFeature = require('@openfeature/server-sdk').OpenFeature;
-const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
 const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-provider').OpenFeatureSplitProvider;
 
 const authorizationKey = 'your auth key'
-const splitClient = SplitFactory({core: {authorizationKey}}).client();
-const provider = new OpenFeatureSplitProvider({splitClient});
+const provider = new OpenFeatureSplitProvider(authorizationKey);
 OpenFeature.setProvider(provider);
 ```
 
@@ -44,6 +42,18 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 const authorizationKey = 'your auth key'
 const splitFactory = SplitFactory({core: {authorizationKey}});
 const provider = new OpenFeatureSplitProvider(splitFactory);
+OpenFeature.setProvider(provider);
+```
+
+### Register the Split provider with OpenFeature using splitClient
+```js
+const OpenFeature = require('@openfeature/server-sdk').OpenFeature;
+const SplitFactory = require('@splitsoftware/splitio').SplitFactory;
+const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-provider').OpenFeatureSplitProvider;
+
+const authorizationKey = 'your auth key'
+const splitClient = SplitFactory({core: {authorizationKey}}).client();
+const provider = new OpenFeatureSplitProvider({splitClient});
 OpenFeature.setProvider(provider);
 ```
 
