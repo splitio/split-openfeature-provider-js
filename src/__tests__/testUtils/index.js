@@ -1,3 +1,5 @@
+import { SplitFactory } from '@splitsoftware/splitio';
+
 const DEFAULT_ERROR_MARGIN = 50; // 0.05 secs
 
 /**
@@ -66,4 +68,45 @@ export function url(settings, target) {
     return `${settings.urls.streaming}${target}`;
   }
   return `${settings.urls.sdk}${target}`;
+}
+
+const getRedisConfig = (redisPort) => ({
+    core: {
+      authorizationKey: 'SOME SDK KEY' // in consumer mode, SDK key is only used to track and log warning regarding duplicated SDK instances
+    },
+    mode: 'consumer',
+    storage: {
+      type: 'REDIS',
+      prefix: 'REDIS_NODE_UT',
+      options: {
+        url: `redis://localhost:${redisPort}/0`
+      }
+    },
+    sync: {
+      impressionsMode: 'DEBUG'
+    },
+    startup: {
+      readyTimeout: 36000 // 10hs
+    }
+  });
+
+const config = {
+    core: {
+      authorizationKey: 'localhost'
+    },
+    features: './split.yaml',
+  }
+/**
+ * get a Split client in localhost mode for testing purposes
+ */
+export function getLocalHostSplitClient() {
+  return SplitFactory(config).client();
+}
+
+export function getRedisSplitClient(redisPort) {
+  return SplitFactory(getRedisConfig(redisPort)).client();
+}
+
+export function getSplitFactory() {
+  return SplitFactory(config);
 }

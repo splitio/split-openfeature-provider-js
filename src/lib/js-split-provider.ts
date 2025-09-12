@@ -1,17 +1,22 @@
 import {
   EvaluationContext,
-  Provider,
-  ResolutionDetails,
-  ParseError,
   FlagNotFoundError,
+  InvalidContextError,
   JsonValue,
-  TargetingKeyMissingError,
+  OpenFeatureEventEmitter,
+  ParseError,
+  Provider,
+  ProviderEvents,
+  ResolutionDetails,
   StandardResolutionReasons,
-} from "@openfeature/js-sdk";
-import type SplitIO from "@splitsoftware/splitio/types/splitio";
+  TargetingKeyMissingError,
+  TrackingEventDetails
+} from '@openfeature/server-sdk';
+import { SplitFactory } from '@splitsoftware/splitio';
+import type SplitIO from '@splitsoftware/splitio/types/splitio';
 
-export interface SplitProviderOptions {
-  splitClient: SplitIO.IClient;
+type SplitProviderOptions = {
+  splitClient: SplitIO.IClient | SplitIO.IAsyncClient;
 }
 
 type Consumer = {
@@ -19,22 +24,52 @@ type Consumer = {
   attributes: SplitIO.Attributes;
 };
 
-const CONTROL_VALUE_ERROR_MESSAGE = "Received the 'control' value from Split.";
+const CONTROL_VALUE_ERROR_MESSAGE = 'Received the "control" value from Split.';
+const CONTROL_TREATMENT = 'control';
 
 export class OpenFeatureSplitProvider implements Provider {
   metadata = {
-    name: "split",
+    name: 'split',
   };
   private initialized: Promise<void>;
-  private client: SplitIO.IClient;
+  private client: SplitIO.IClient | SplitIO.IAsyncClient;
 
-  constructor(options: SplitProviderOptions) {
-    this.client = options.splitClient;
+  public readonly events = new OpenFeatureEventEmitter();
+
+  private getSplitClient(options: SplitProviderOptions | string | SplitIO.ISDK | SplitIO.IAsyncSDK) {
+    if (typeof(options) === 'string') {
+      const splitFactory = SplitFactory({core: { authorizationKey: options } });
+      return splitFactory.client();
+    } 
+
+    let splitClient;
+    try {
+      splitClient = (options as SplitIO.ISDK | SplitIO.IAsyncSDK).client();
+    } catch {
+      splitClient = (options as SplitProviderOptions).splitClient
+    }
+
+    return splitClient;
+  }
+  
+  constructor(options: SplitProviderOptions | string | SplitIO.ISDK | SplitIO.IAsyncSDK) {
+
+    this.client = this.getSplitClient(options);
+
+    this.client.on(this.client.Event.SDK_UPDATE, () => {
+      this.events.emit(ProviderEvents.ConfigurationChanged)
+    });
     this.initialized = new Promise((resolve) => {
-      this.client.on(this.client.Event.SDK_READY, () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((this.client as any).__getStatus().isReady) {
         console.log(`${this.metadata.name} provider initialized`);
         resolve();
-      });
+      } else {
+        this.client.on(this.client.Event.SDK_READY, () => {
+          console.log(`${this.metadata.name} provider initialized`);
+          resolve();
+        });
+      }
     });
   }
 
@@ -47,33 +82,17 @@ export class OpenFeatureSplitProvider implements Provider {
       flagKey,
       this.transformContext(context)
     );
+    const treatment = details.value.toLowerCase();
 
-    let value: boolean;
-    switch (details.value as unknown) {
-      case "on":
-        value = true;
-        break;
-      case "off":
-        value = false;
-        break;
-      case "true":
-        value = true;
-        break;
-      case "false":
-        value = false;
-        break;
-      case true:
-        value = true;
-        break;
-      case false:
-        value = false;
-        break;
-      case "control":
-        throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
-      default:
-        throw new ParseError(`Invalid boolean value for ${details.value}`);
+    if ( treatment === 'on' || treatment === 'true' ) {
+      return { ...details, value: true };
     }
-    return { ...details, value };
+
+    if ( treatment === 'off' || treatment === 'false' ) {
+      return { ...details, value: false };
+    }
+
+    throw new ParseError(`Invalid boolean value for ${treatment}`);
   }
 
   async resolveStringEvaluation(
@@ -85,9 +104,6 @@ export class OpenFeatureSplitProvider implements Provider {
       flagKey,
       this.transformContext(context)
     );
-    if (details.value === "control") {
-      throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
-    }
     return details;
   }
 
@@ -121,25 +137,77 @@ export class OpenFeatureSplitProvider implements Provider {
   ): Promise<ResolutionDetails<string>> {
     if (!consumer.key) {
       throw new TargetingKeyMissingError(
-        "The Split provider requires a targeting key."
+        'The Split provider requires a targeting key.'
       );
-    } else {
-      await this.initialized;
-      const value = this.client.getTreatment(
-        consumer.key,
-        flagKey,
-        consumer.attributes
-      );
-      const details: ResolutionDetails<string> = {
-        value: value,
-        variant: value,
-        reason: StandardResolutionReasons.TARGETING_MATCH,
-      };
-      return details;
     }
+    if (flagKey == null || flagKey === '') {
+      throw new FlagNotFoundError(
+        'flagKey must be a non-empty string'
+      );
+    }
+
+    await this.initialized;
+    const { treatment: value, config }: SplitIO.TreatmentWithConfig = await this.client.getTreatmentWithConfig(
+      consumer.key,
+      flagKey,
+      consumer.attributes
+    );
+    if (value === CONTROL_TREATMENT) {
+      throw new FlagNotFoundError(CONTROL_VALUE_ERROR_MESSAGE);
+    }
+    const flagMetadata = { config: config ? config : '' };
+    const details: ResolutionDetails<string> = {
+      value: value,
+      variant: value,
+      flagMetadata: flagMetadata,
+      reason: StandardResolutionReasons.TARGETING_MATCH,
+    };
+    return details;
   }
 
-  //Transform the context into an object useful for the Split API, an key string with arbitrary Split "Attributes".
+  async track(
+    trackingEventName: string,
+    context: EvaluationContext,
+    details: TrackingEventDetails
+  ): Promise<void> {
+
+    // targetingKey is always required
+    const { targetingKey } = context;
+    if (targetingKey == null || targetingKey === '')
+      throw new TargetingKeyMissingError('Missing targetingKey, required to track');
+
+    // eventName is always required
+    if (trackingEventName == null || trackingEventName === '')
+      throw new ParseError('Missing eventName, required to track');
+
+    // trafficType is always required
+    const ttVal = context['trafficType'];
+    const trafficType =
+      ttVal != null && typeof ttVal === 'string' && ttVal.trim() !== ''
+        ? ttVal
+        : null;
+    if (trafficType == null || trafficType === '')
+      throw new InvalidContextError('Missing trafficType variable, required to track');
+
+    let value;
+    let properties: SplitIO.Properties = {};
+    if (details != null) {
+      if (details.value != null) {
+        value = details.value;
+      }
+      if (details.properties != null) {
+        properties = details.properties as SplitIO.Properties;
+      }
+    } 
+
+    this.client.track(targetingKey, trafficType, trackingEventName, value, properties);
+  }
+
+  async onClose?(): Promise<void> {
+    return this.client.destroy();
+  }
+
+  //Transform the context into an object useful for the Split API, an key string with arbitrary Split 'Attributes'.
   private transformContext(context: EvaluationContext): Consumer {
     const { targetingKey, ...attributes } = context;
     return {
@@ -169,7 +237,7 @@ export class OpenFeatureSplitProvider implements Provider {
     // we may want to allow the parsing to be customized.
     try {
       const value = JSON.parse(stringValue);
-      if (typeof value !== "object") {
+      if (typeof value !== 'object') {
         throw new ParseError(
           `Flag value ${stringValue} had unexpected type ${typeof value}, expected "object"`
         );

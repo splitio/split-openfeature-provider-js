@@ -8,5 +8,7 @@
     treatment: "off"
 - int_feature:
     treatment: "32"
+    config: "{\"desc\" : \"this applies only to number treatment\"}"
 - obj_feature:
     treatment: "{\"key\": \"value\"}"
+    config: "{\"desc\" : \"this applies only to obj treatment\"}"
