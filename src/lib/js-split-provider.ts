@@ -1,7 +1,6 @@
 import {
   EvaluationContext,
   FlagNotFoundError,
-  InvalidContextError,
   JsonValue,
   OpenFeatureEventEmitter,
   ParseError,
@@ -20,7 +19,8 @@ type SplitProviderOptions = {
 }
 
 type Consumer = {
-  key: string | undefined;
+  targetingKey: string | undefined;
+  trafficType: string;
   attributes: SplitIO.Attributes;
 };
 
@@ -31,9 +31,9 @@ export class OpenFeatureSplitProvider implements Provider {
   metadata = {
     name: 'split',
   };
-  private initialized: Promise<void>;
-  private client: SplitIO.IClient | SplitIO.IAsyncClient;
 
+  private client: SplitIO.IClient | SplitIO.IAsyncClient;
+  private trafficType: string;
   public readonly events = new OpenFeatureEventEmitter();
 
   private getSplitClient(options: SplitProviderOptions | string | SplitIO.ISDK | SplitIO.IAsyncSDK) {
@@ -53,27 +53,15 @@ export class OpenFeatureSplitProvider implements Provider {
   }
   
   constructor(options: SplitProviderOptions | string | SplitIO.ISDK | SplitIO.IAsyncSDK) {
-
+    // Asume 'user' as default traffic type'
+    this.trafficType = 'user';
     this.client = this.getSplitClient(options);
-
     this.client.on(this.client.Event.SDK_UPDATE, () => {
-      this.events.emit(ProviderEvents.ConfigurationChanged)
-    });
-    this.initialized = new Promise((resolve) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((this.client as any).__getStatus().isReady) {
-        console.log(`${this.metadata.name} provider initialized`);
-        resolve();
-      } else {
-        this.client.on(this.client.Event.SDK_READY, () => {
-          console.log(`${this.metadata.name} provider initialized`);
-          resolve();
-        });
-      }
-    });
+      this.events.emit(ProviderEvents.ConfigurationChanged);
+    }); 
   }
 
-  async resolveBooleanEvaluation(
+  public async resolveBooleanEvaluation(
     flagKey: string,
     _: boolean,
     context: EvaluationContext
@@ -95,7 +83,7 @@ export class OpenFeatureSplitProvider implements Provider {
     throw new ParseError(`Invalid boolean value for ${treatment}`);
   }
 
-  async resolveStringEvaluation(
+  public async resolveStringEvaluation(
     flagKey: string,
     _: string,
     context: EvaluationContext
@@ -107,7 +95,7 @@ export class OpenFeatureSplitProvider implements Provider {
     return details;
   }
 
-  async resolveNumberEvaluation(
+  public async resolveNumberEvaluation(
     flagKey: string,
     _: number,
     context: EvaluationContext
@@ -119,7 +107,7 @@ export class OpenFeatureSplitProvider implements Provider {
     return { ...details, value: this.parseValidNumber(details.value) };
   }
 
-  async resolveObjectEvaluation<U extends JsonValue>(
+  public async resolveObjectEvaluation<U extends JsonValue>(
     flagKey: string,
     _: U,
     context: EvaluationContext
@@ -135,7 +123,7 @@ export class OpenFeatureSplitProvider implements Provider {
     flagKey: string,
     consumer: Consumer
   ): Promise<ResolutionDetails<string>> {
-    if (!consumer.key) {
+    if (!consumer.targetingKey) {
       throw new TargetingKeyMissingError(
         'The Split provider requires a targeting key.'
       );
@@ -146,9 +134,12 @@ export class OpenFeatureSplitProvider implements Provider {
       );
     }
 
-    await this.initialized;
+    await new Promise((resolve, reject) => {
+      this.readinessHandler(resolve, reject);
+    });
+    
     const { treatment: value, config }: SplitIO.TreatmentWithConfig = await this.client.getTreatmentWithConfig(
-      consumer.key,
+      consumer.targetingKey,
       flagKey,
       consumer.attributes
     );
@@ -171,23 +162,14 @@ export class OpenFeatureSplitProvider implements Provider {
     details: TrackingEventDetails
   ): Promise<void> {
 
-    // targetingKey is always required
-    const { targetingKey } = context;
-    if (targetingKey == null || targetingKey === '')
-      throw new TargetingKeyMissingError('Missing targetingKey, required to track');
-
     // eventName is always required
     if (trackingEventName == null || trackingEventName === '')
       throw new ParseError('Missing eventName, required to track');
 
-    // trafficType is always required
-    const ttVal = context['trafficType'];
-    const trafficType =
-      ttVal != null && typeof ttVal === 'string' && ttVal.trim() !== ''
-        ? ttVal
-        : null;
-    if (trafficType == null || trafficType === '')
-      throw new InvalidContextError('Missing trafficType variable, required to track');
+    // targetingKey is always required
+    const { targetingKey, trafficType } = this.transformContext(context);
+    if (targetingKey == null || targetingKey === '')
+      throw new TargetingKeyMissingError('Missing targetingKey, required to track');
 
     let value;
     let properties: SplitIO.Properties = {};
@@ -203,15 +185,20 @@ export class OpenFeatureSplitProvider implements Provider {
     this.client.track(targetingKey, trafficType, trackingEventName, value, properties);
   }
 
-  async onClose?(): Promise<void> {
+  public async onClose?(): Promise<void> {
     return this.client.destroy();
   }
 
   //Transform the context into an object useful for the Split API, an key string with arbitrary Split 'Attributes'.
   private transformContext(context: EvaluationContext): Consumer {
-    const { targetingKey, ...attributes } = context;
+    const { targetingKey, trafficType: ttVal, ...attributes } = context;
+    const trafficType =
+      ttVal != null && typeof ttVal === 'string' && ttVal.trim() !== ''
+        ? ttVal
+        : this.trafficType; 
     return {
-      key: targetingKey,
+      targetingKey,
+      trafficType,
       // Stringify context objects include date.
       attributes: JSON.parse(JSON.stringify(attributes)),
     };
@@ -245,6 +232,21 @@ export class OpenFeatureSplitProvider implements Provider {
       return value;
     } catch (err) {
       throw new ParseError(`Error parsing ${stringValue} as JSON, ${err}`);
+    }
+  }
+
+  private async readinessHandler(onSdkReady: (params?: unknown) => void, onSdkTimedOut: () => void): Promise<void> {
+
+    const clientStatus = this.client.getStatus();
+    if (clientStatus.isReady) {
+      onSdkReady();
+    } else {
+      if (clientStatus.hasTimedout) {
+        onSdkTimedOut();
+      } else {
+        this.client.on(this.client.Event.SDK_READY_TIMED_OUT, onSdkTimedOut);
+      }
+      this.client.on(this.client.Event.SDK_READY, onSdkReady);
     }
   }
 }
