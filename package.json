@@ -1,6 +1,6 @@
 {
   "name": "@splitsoftware/openfeature-js-split-provider",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Split OpenFeature Provider",
   "files": [
     "README.md",
@@ -35,13 +35,13 @@
     }
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.19.0",
-    "@splitsoftware/splitio": "^11.4.1"
+    "@openfeature/server-sdk": "^1.20.0",
+    "@splitsoftware/splitio": "^11.8.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
-    "@openfeature/server-sdk": "^1.19.0",
-    "@splitsoftware/splitio": "^11.4.1",
+    "@openfeature/server-sdk": "^1.20.0",
+    "@splitsoftware/splitio": "^11.8.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.1",
     "copyfiles": "^2.4.1",

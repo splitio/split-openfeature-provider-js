@@ -1,3 +1,7 @@
+1.2.0 (November 7, 2025)
+  - Updated @openfeature/server-sdk to 1.20.0
+  - Updated @splitsoftware/splitio to 11.8.0
+
 1.1.0 (September 12, 2025)
   - Updated @openfeature/server-sdk to 1.19.0
   - Updated @splitsoftware/splitio to 11.4.1
