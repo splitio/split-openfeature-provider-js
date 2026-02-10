@@ -1,5 +1,6 @@
 import {
   EvaluationContext,
+  EventDetails,
   FlagNotFoundError,
   JsonValue,
   OpenFeatureEventEmitter,
@@ -56,9 +57,28 @@ export class OpenFeatureSplitProvider implements Provider {
     // Asume 'user' as default traffic type'
     this.trafficType = 'user';
     this.client = this.getSplitClient(options);
-    this.client.on(this.client.Event.SDK_UPDATE, () => {
-      this.events.emit(ProviderEvents.ConfigurationChanged);
-    }); 
+    // Forward Split SDK_UPDATE event (flags/segments changed) to OpenFeature ConfigurationChanged with event metadata
+    this.client.on(this.client.Event.SDK_UPDATE, (updateMetadata: SplitIO.SdkUpdateMetadata) => {
+      let eventDetails: EventDetails = {
+        providerName: this.metadata.name,
+      };
+      if (updateMetadata) {
+        eventDetails = {
+          ...eventDetails,
+          eventMetadata: {
+            type: updateMetadata.type,
+            names: JSON.stringify(updateMetadata.names),
+          }
+        }
+      
+        if (updateMetadata.type === 'FLAGS_UPDATE')
+          eventDetails = {
+            ...eventDetails,
+            flagsChanged: updateMetadata.names,
+          };
+      }
+      this.events.emit(ProviderEvents.ConfigurationChanged, eventDetails);
+    });
   }
 
   public async resolveBooleanEvaluation(
