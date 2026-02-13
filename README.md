@@ -102,13 +102,12 @@ const config = booleanTreatment.flagMetadata.config
 
 ## Configuration changed event (SDK_UPDATE)
 
-When the Split SDK emits the `SDK_UPDATE` **event** (flags or segments changed), the provider emits OpenFeature’s `ConfigurationChanged` and forwards the event metadata. The metadata shape matches [javascript-commons SdkUpdateMetadata](https://github.com/splitio/javascript-commons): `type` is `'FLAGS_UPDATE' | 'SEGMENTS_UPDATE'` and `names` is the list of flag or segment names that were updated. Handlers receive [Provider Event Details](https://openfeature.dev/specification/types#provider-event-details): `flagsChanged` (when `type === 'FLAGS_UPDATE'`, the `names` array) and `metadata` (`type` and `names` as JSON string).
+When the Split SDK emits the `SDK_UPDATE` **event** (flags or segments changed), the provider emits OpenFeature’s `ConfigurationChanged` and forwards the event metadata. The metadata shape matches [javascript-commons SdkUpdateMetadata](https://github.com/splitio/javascript-commons): `type` is `'FLAGS_UPDATE' | 'SEGMENTS_UPDATE'` and `names` is the list of flag or segment names that were updated. Handlers receive [Provider Event Details](https://openfeature.dev/specification/types#provider-event-details): `flagsChanged` (when `type === 'FLAGS_UPDATE'`, the `names` array) and `metadata` (`type` as string).
 
 Requires `@splitsoftware/splitio` **11.10.0 or later** (metadata was added in 11.10.0).
 
 ```js
 const { OpenFeature, ProviderEvents } = require('@openfeature/server-sdk');
-const { ProviderEvents } = require('@openfeature/server-sdk');
 
 const client = OpenFeature.getClient();
 client.addHandler(ProviderEvents.ConfigurationChanged, (eventDetails) => {
