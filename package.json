@@ -34,9 +34,11 @@
       "import": "./es/index.js"
     }
   },
-  "peerDependencies": {
-    "@openfeature/server-sdk": "^1.20.0",
+  "dependencies": {
     "@splitsoftware/splitio": "^11.10.0"
+  },
+  "peerDependencies": {
+    "@openfeature/server-sdk": "^1.20.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

@@ -264,7 +264,7 @@ describe('provider events metadata', () => {
     return mock;
   }
 
-  test('ConfigurationChanged event includes metadata (type, names) and flagsChanged when FLAGS_UPDATE', async () => {
+  test('ConfigurationChanged event includes metadata (type) and flagsChanged when FLAGS_UPDATE', async () => {
     const mockClient = createMockSplitClient();
     const provider = new OpenFeatureSplitProvider({ splitClient: mockClient });
     const configChangedDetails = [];
@@ -274,7 +274,7 @@ describe('provider events metadata', () => {
 
     expect(configChangedDetails.length).toBe(1);
     expect(configChangedDetails[0].providerName).toBe('split');
-    expect(configChangedDetails[0].metadata).toEqual({ type: 'FLAGS_UPDATE', names: '["flag1","flag2"]' });
+    expect(configChangedDetails[0].metadata).toEqual({ type: 'FLAGS_UPDATE' });
     expect(configChangedDetails[0].flagsChanged).toEqual(['flag1', 'flag2']);
 
     await provider.onClose();
@@ -286,11 +286,11 @@ describe('provider events metadata', () => {
     const configChangedDetails = [];
     provider.events.addHandler(ProviderEvents.ConfigurationChanged, (details) => configChangedDetails.push(details));
 
-    mockClient._emit(SDK_UPDATE, { type: 'SEGMENTS_UPDATE', names: ['seg1'] });
+    mockClient._emit(SDK_UPDATE, { type: 'SEGMENTS_UPDATE' });
 
     expect(configChangedDetails.length).toBe(1);
     expect(configChangedDetails[0].providerName).toBe('split');
-    expect(configChangedDetails[0].metadata).toEqual({ type: 'SEGMENTS_UPDATE', names: '["seg1"]' });
+    expect(configChangedDetails[0].metadata).toEqual({ type: 'SEGMENTS_UPDATE' });
     expect(configChangedDetails[0].flagsChanged).toBeUndefined();
 
     await provider.onClose();

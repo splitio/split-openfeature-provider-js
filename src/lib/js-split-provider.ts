@@ -53,10 +53,7 @@ export class OpenFeatureSplitProvider implements Provider {
           providerName: this.metadata.name,
           ...(updateMetadata
             ? {
-                metadata: {
-                  type: updateMetadata.type,
-                  names: JSON.stringify(updateMetadata.names),
-                },
+                metadata: { type: updateMetadata.type },
                 ...(updateMetadata.type === 'FLAGS_UPDATE'
                   ? { flagsChanged: updateMetadata.names }
                   : {}),
