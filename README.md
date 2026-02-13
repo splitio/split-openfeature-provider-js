@@ -30,7 +30,9 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 
 const authorizationKey = 'your auth key'
 const provider = new OpenFeatureSplitProvider(authorizationKey);
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient('my-app');
+// safe to evaluate
 ```
 
 ### Register the Split provider with OpenFeature using splitFactory
@@ -42,7 +44,9 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 const authorizationKey = 'your auth key'
 const splitFactory = SplitFactory({core: {authorizationKey}});
 const provider = new OpenFeatureSplitProvider(splitFactory);
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient('my-app');
+// safe to evaluate
 ```
 
 ### Register the Split provider with OpenFeature using splitClient
@@ -54,7 +58,9 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 const authorizationKey = 'your auth key'
 const splitClient = SplitFactory({core: {authorizationKey}}).client();
 const provider = new OpenFeatureSplitProvider({splitClient});
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient('my-app');
+// safe to evaluate
 ```
 
 ## Use of OpenFeature with Split
