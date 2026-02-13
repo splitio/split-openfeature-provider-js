@@ -107,7 +107,7 @@ When the Split SDK emits the `SDK_UPDATE` **event** (flags or segments changed),
 Requires `@splitsoftware/splitio` **11.10.0 or later** (metadata was added in 11.10.0).
 
 ```js
-const { OpenFeature } = require('@openfeature/server-sdk');
+const { OpenFeature, ProviderEvents } = require('@openfeature/server-sdk');
 const { ProviderEvents } = require('@openfeature/server-sdk');
 
 const client = OpenFeature.getClient();
