@@ -1,8 +1,7 @@
 /* eslint-disable jest/no-conditional-expect */
+import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import { OpenFeatureSplitProvider } from '../../lib/js-split-provider';
 import { getLocalHostSplitClient, getSplitFactory } from '../testUtils';
-
-import { OpenFeature } from '@openfeature/server-sdk';
 
 const cases = [
   [
@@ -117,6 +116,22 @@ describe.each(cases)('%s', (label, getOptions) => {
 
   test('evaluate Metadata name test', async () => {
     expect(client.metadata.name).toBe('test');
+  });
+
+  test('Ready event includes Split metadata (readyFromCache, initialCacheLoad)', async () => {
+    const readyDetails = [];
+    const testProvider = new OpenFeatureSplitProvider(options);
+    testProvider.events.addHandler(ProviderEvents.Ready, (details) => readyDetails.push(details));
+    await OpenFeature.setProviderAndWait(testProvider);
+    expect(readyDetails.length).toBeGreaterThanOrEqual(1);
+    const withMetadata = readyDetails.find((d) => d && d.metadata);
+    expect(withMetadata).toBeDefined();
+    expect(withMetadata.providerName).toBe('split');
+    expect(typeof withMetadata.metadata.readyFromCache).toBe('boolean');
+    expect(typeof withMetadata.metadata.initialCacheLoad).toBe('boolean');
+    if (withMetadata.metadata.lastUpdateTimestamp != null) {
+      expect(typeof withMetadata.metadata.lastUpdateTimestamp).toBe('number');
+    }
   });
 
   test('evaluate Boolean without details test', async () => {

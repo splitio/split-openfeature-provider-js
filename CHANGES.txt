@@ -1,5 +1,5 @@
-1.3.0 (February 9, 2025)
-  - ConfigurationChanged event now forwards SDK_UPDATE metadata from Split (flagsChanged, eventMetadata with type and names)
+1.3.0 (February 12, 2025)
+  - ConfigurationChanged event now forwards SDK_UPDATE metadata from Split (flagsChanged, metadata with type and names)
   - Requires @splitsoftware/splitio ^11.10.0 for SDK_UPDATE metadata support
 
 1.2.0 (November 7, 2025)

@@ -32,25 +32,24 @@ const startRedis = () => {
   return promise;
 };
 
-let redisServer
-let splitClient
+let redisServer;
+let splitClient;
+let client;
 
 beforeAll(async () => {
   redisServer = await startRedis();
+  splitClient = getRedisSplitClient(redisPort);
+  const provider = new OpenFeatureSplitProvider({ splitClient });
+  await OpenFeature.setProviderAndWait(provider);
+  client = OpenFeature.getClient();
 }, 30000);
 
 afterAll(async () => {
-  await redisServer.close();
-  await splitClient.destroy();
+  if (redisServer) await redisServer.close();
+  if (splitClient && typeof splitClient.destroy === 'function') await splitClient.destroy();
 });
 
 describe('Regular usage - DEBUG strategy', () => {
-  splitClient = getRedisSplitClient(redisPort);
-  const provider = new OpenFeatureSplitProvider({ splitClient });
-
-  OpenFeature.setProviderAndWait(provider);
-  const client = OpenFeature.getClient();
-  
   test('Evaluate always on flag', async () => {
     await client.getBooleanValue('always-on', false, {targetingKey: 'emma-ss'}).then(result => {
       expect(result).toBe(true);
