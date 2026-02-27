@@ -291,7 +291,7 @@ describe('provider events metadata', () => {
     expect(configChangedDetails.length).toBe(1);
     expect(configChangedDetails[0].providerName).toBe('split');
     expect(configChangedDetails[0].metadata).toEqual({ type: 'SEGMENTS_UPDATE' });
-    expect(configChangedDetails[0].flagsChanged).toBeUndefined();
+    expect(configChangedDetails[0].flagsChanged).toEqual([]);
 
     await provider.onClose();
   });
