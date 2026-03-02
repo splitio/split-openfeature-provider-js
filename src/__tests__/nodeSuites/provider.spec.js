@@ -1,4 +1,5 @@
 /* eslint-disable jest/no-conditional-expect */
+import { ProviderEvents } from '@openfeature/server-sdk';
 import { getLocalHostSplitClient, getSplitFactory } from '../testUtils';
 import { OpenFeatureSplitProvider } from '../../lib/js-split-provider';
 
@@ -237,5 +238,77 @@ describe.each(cases)('%s', (label, getOptions) => {
     );
     expect(trackSpy).toHaveBeenCalledTimes(1);
     expect(trackSpy).toHaveBeenCalledWith('u1', 'user', 'purchase', 9.99, { plan: 'pro', beta: true });
+  });
+});
+
+describe('provider events metadata', () => {
+  const SDK_UPDATE = 'state::update';
+
+  function createMockSplitClient() {
+    const listeners = {};
+    const mock = {
+      Event: { SDK_UPDATE },
+      getStatus: jest.fn().mockReturnValue({ isReady: true, hasTimedout: false }),
+      getTreatmentWithConfig: jest.fn().mockResolvedValue({ treatment: 'on', config: '' }),
+      on: jest.fn((event, cb) => {
+        listeners[event] = listeners[event] || [];
+        listeners[event].push(cb);
+        return mock;
+      }),
+      track: jest.fn(),
+      destroy: jest.fn(),
+      _emit(event, payload) {
+        (listeners[event] || []).forEach((cb) => cb(payload));
+      },
+    };
+    return mock;
+  }
+
+  test('ConfigurationChanged event includes metadata (type) and flagsChanged when FLAGS_UPDATE', async () => {
+    const mockClient = createMockSplitClient();
+    const provider = new OpenFeatureSplitProvider({ splitClient: mockClient });
+    const configChangedDetails = [];
+    provider.events.addHandler(ProviderEvents.ConfigurationChanged, (details) => configChangedDetails.push(details));
+
+    mockClient._emit(SDK_UPDATE, { type: 'FLAGS_UPDATE', names: ['flag1', 'flag2'] });
+
+    expect(configChangedDetails.length).toBe(1);
+    expect(configChangedDetails[0].providerName).toBe('split');
+    expect(configChangedDetails[0].metadata).toEqual({ type: 'FLAGS_UPDATE' });
+    expect(configChangedDetails[0].flagsChanged).toEqual(['flag1', 'flag2']);
+
+    await provider.onClose();
+  });
+
+  test('ConfigurationChanged event includes metadata without flagsChanged when SEGMENTS_UPDATE', async () => {
+    const mockClient = createMockSplitClient();
+    const provider = new OpenFeatureSplitProvider({ splitClient: mockClient });
+    const configChangedDetails = [];
+    provider.events.addHandler(ProviderEvents.ConfigurationChanged, (details) => configChangedDetails.push(details));
+
+    mockClient._emit(SDK_UPDATE, { type: 'SEGMENTS_UPDATE' });
+
+    expect(configChangedDetails.length).toBe(1);
+    expect(configChangedDetails[0].providerName).toBe('split');
+    expect(configChangedDetails[0].metadata).toEqual({ type: 'SEGMENTS_UPDATE' });
+    expect(configChangedDetails[0].flagsChanged).toEqual([]);
+
+    await provider.onClose();
+  });
+
+  test('ConfigurationChanged event includes only providerName when SDK_UPDATE payload is undefined', async () => {
+    const mockClient = createMockSplitClient();
+    const provider = new OpenFeatureSplitProvider({ splitClient: mockClient });
+    const configChangedDetails = [];
+    provider.events.addHandler(ProviderEvents.ConfigurationChanged, (details) => configChangedDetails.push(details));
+
+    mockClient._emit(SDK_UPDATE, undefined);
+
+    expect(configChangedDetails.length).toBe(1);
+    expect(configChangedDetails[0].providerName).toBe('split');
+    expect(configChangedDetails[0].metadata).toBeUndefined();
+    expect(configChangedDetails[0].flagsChanged).toBeUndefined();
+
+    await provider.onClose();
   });
 });
