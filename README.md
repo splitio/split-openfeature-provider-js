@@ -30,7 +30,9 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 
 const authorizationKey = 'your auth key'
 const provider = new OpenFeatureSplitProvider(authorizationKey);
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient('my-app');
+// safe to evaluate
 ```
 
 ### Register the Split provider with OpenFeature using splitFactory
@@ -42,7 +44,9 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 const authorizationKey = 'your auth key'
 const splitFactory = SplitFactory({core: {authorizationKey}});
 const provider = new OpenFeatureSplitProvider(splitFactory);
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient('my-app');
+// safe to evaluate
 ```
 
 ### Register the Split provider with OpenFeature using splitClient
@@ -54,7 +58,9 @@ const OpenFeatureSplitProvider = require('@splitsoftware/openfeature-js-split-pr
 const authorizationKey = 'your auth key'
 const splitClient = SplitFactory({core: {authorizationKey}}).client();
 const provider = new OpenFeatureSplitProvider({splitClient});
-OpenFeature.setProvider(provider);
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient('my-app');
+// safe to evaluate
 ```
 
 ## Use of OpenFeature with Split
@@ -92,6 +98,22 @@ Use the get*Details(...) APIs to get the value and rich context (variant, reason
 const booleanTreatment = await client.getBooleanDetails('boolFlag', false, context);
 
 const config = booleanTreatment.flagMetadata.config
+```
+
+## Configuration changed event (SDK_UPDATE)
+
+When the Split SDK emits the `SDK_UPDATE` **event** (flags or segments changed), the provider emits OpenFeature’s `ConfigurationChanged` and forwards the event metadata. The metadata shape matches [javascript-commons SdkUpdateMetadata](https://github.com/splitio/javascript-commons): `type` is `'FLAGS_UPDATE' | 'SEGMENTS_UPDATE'` and `names` is the list of flag or segment names that were updated. Handlers receive [Provider Event Details](https://openfeature.dev/specification/types#provider-event-details): `flagsChanged` (when `type === 'FLAGS_UPDATE'`, the `names` array) and `metadata` (`type` as string).
+
+Requires `@splitsoftware/splitio` **11.10.0 or later** (metadata was added in 11.10.0).
+
+```js
+const { OpenFeature, ProviderEvents } = require('@openfeature/server-sdk');
+
+const client = OpenFeature.getClient();
+client.addHandler(ProviderEvents.ConfigurationChanged, (eventDetails) => {
+  console.log('Flags changed:', eventDetails.flagsChanged);
+  console.log('Event metadata:', eventDetails.metadata);
+});
 ```
 
 ## Tracking
