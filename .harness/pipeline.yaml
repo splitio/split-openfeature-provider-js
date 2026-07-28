@@ -9,10 +9,7 @@ pipeline:
       codebase:
         connectorRef: fmegithubharnessgitops
         repoName: split-openfeature-provider-js
-        build:
-          type: branch
-          spec:
-            branch: <+input>
+        build: <+input>
   stages:
     - stage:
         name: Build and Test
