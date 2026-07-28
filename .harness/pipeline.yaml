@@ -119,7 +119,7 @@ pipeline:
                         -Dsonar.tests=src/__tests__ \
                         -Dsonar.host.url=https://sonar.harness.io \
                         -Dsonar.token=<+secrets.getValue("sonarqube-token")> \
-                        -Dsonar.exclusions="**/node_modules/**,**/dist/**" \
+                        -Dsonar.exclusions="**/node_modules/**,**/dist/**,src/__tests__/**" \
                         -Dsonar.coverage.exclusions="**/__tests__/**,**/node_modules/**"
               - step:
                   type: Run
