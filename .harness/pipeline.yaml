@@ -18,6 +18,8 @@ pipeline:
         type: CI
         spec:
           cloneCodebase: true
+          envVariables:
+            CI_ENABLE_HCLI_FOR_TESTS: "true"
           caching:
             enabled: true
             override: true
@@ -96,74 +98,25 @@ pipeline:
                     command: |-
                       export PATH="$HOME/.local/bin:$PATH"
                       eval "$(mise activate bash)"
-                      npm run test
+                      npm run test -- --coverage --coverageReporters=lcov --coverageDirectory=coverage
               - step:
-                  type: Run
-                  name: SonarQube Scan
-                  identifier: SonarQube_Scan
+                  name: harnessCoverage
+                  identifier: harnessCoverage
                   when:
                     stageStatus: Success
                     condition: <+matrix.nodeVersion> == "lts"
-                  spec:
-                    shell: Sh
-                    command: |-
-                      export SONAR_SCANNER_VERSION=5.0.1.3006
-                      curl -sSLo sonar-scanner.zip \
-                        "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux.zip"
-                      unzip -q sonar-scanner.zip
-                      export PATH="$PWD/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin:$PATH"
-                      apt-get install -y openjdk-17-jdk -qq
-                      sonar-scanner \
-                        -Dsonar.projectKey=split-openfeature-provider-js \
-                        -Dsonar.sources=src \
-                        -Dsonar.tests=src/__tests__ \
-                        -Dsonar.host.url=https://sonar.harness.io \
-                        -Dsonar.token=<+secrets.getValue("sonarqube-token")> \
-                        -Dsonar.exclusions="**/node_modules/**,**/dist/**,src/__tests__/**" \
-                        -Dsonar.coverage.exclusions="**/__tests__/**,**/node_modules/**"
-              - step:
-                  type: Run
-                  name: Post Quality Gate
-                  identifier: Post_Quality_Gate
-                  when:
-                    stageStatus: Success
-                    condition: <+matrix.nodeVersion> == "lts"
-                  spec:
-                    shell: Bash
-                    command: |-
-                      #!/bin/bash
-                      set -e
-
-                      SONAR_TOKEN="<+secrets.getValue("sonarqube-token")>"
-                      SONAR_URL="https://sonar.harness.io"
-                      SONAR_PROJECT_KEY="split-openfeature-provider-js"
-                      GITHUB_TOKEN="<+secrets.getValue("github-devops-token")>"
-                      GITHUB_REPO="split-openfeature-provider-js"
-                      COMMIT_SHA="<+codebase.commitSha>"
-
-                      STATUS_JSON=$(curl -sf \
-                        -H "Authorization: Bearer ${SONAR_TOKEN}" \
-                        "${SONAR_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}")
-
-                      QG_STATUS=$(echo "$STATUS_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['projectStatus']['status'])")
-
-                      case "$QG_STATUS" in
-                        OK)    GH_STATE="success"; DESCRIPTION="Quality gate passed" ;;
-                        ERROR) GH_STATE="failure"; DESCRIPTION="Quality gate failed" ;;
-                        WARN)  GH_STATE="success"; DESCRIPTION="Quality gate passed with warnings" ;;
-                        *)     GH_STATE="pending"; DESCRIPTION="Quality gate status unknown" ;;
-                      esac
-
-                      TARGET_URL="${SONAR_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
-
-                      curl -sf -X POST \
-                        -H "Authorization: token ${GITHUB_TOKEN}" \
-                        -H "Accept: application/vnd.github.v3+json" \
-                        -H "Content-Type: application/json" \
-                        -d "{\"state\":\"${GH_STATE}\",\"description\":\"${DESCRIPTION}\",\"context\":\"sonarqube/quality-gate\",\"target_url\":\"${TARGET_URL}\"}" \
-                        "https://api.github.com/repos/splitio/${GITHUB_REPO}/statuses/${COMMIT_SHA}"
-
-                      echo "Posted SonarQube quality gate status: ${GH_STATE}"
+                  template:
+                    templateRef: account.codeCoverage
+                    versionLabel: v1
+                    templateInputs:
+                      type: Run
+                      spec:
+                        envVariables:
+                          patch_coverage_percent: "80"
+                          file_path: "coverage/lcov.info"
+                          overall_coverage_percent: ""
+                          ignore_failure: "true"
+                          exclude: "**/node_modules/**,**/dist/**,**/build/**,**/*.spec.js,**/*.spec.ts,**/*.spec.tsx,**/*.test.js,**/*.test.ts,**/*.test.tsx,**/__tests__/**"
         strategy:
           matrix:
             nodeVersion:
