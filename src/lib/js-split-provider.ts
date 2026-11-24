@@ -78,10 +78,10 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<boolean>> {
-    void logger;
     const details = await this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
     const treatment = details.value.toLowerCase();
 
@@ -101,10 +101,10 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<string>> {
-    void logger;
     return this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
   }
 
@@ -114,10 +114,10 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<number>> {
-    void logger;
     const details = await this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
     return { ...details, value: parseValidNumber(details.value) };
   }
@@ -128,17 +128,18 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<U>> {
-    void logger;
     const details = await this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
     return { ...details, value: parseValidJsonObject<U>(details.value) };
   }
 
   private async evaluateTreatment(
     flagKey: string,
-    consumer: Consumer
+    consumer: Consumer,
+    logger?: Logger
   ): Promise<ResolutionDetails<string>> {
     if (!consumer.targetingKey) {
       throw new TargetingKeyMissingError(
@@ -148,11 +149,19 @@ export class OpenFeatureSplitProvider implements Provider {
     if (flagKey == null || flagKey === '') {
       throw new FlagNotFoundError('flagKey must be a non-empty string');
     }
+    if (consumer.bucketingKeyIssue) {
+      logger?.warn(
+        `Split provider: ignoring bucketingKey (${consumer.bucketingKeyIssue}); evaluating with the targeting key only.`
+      );
+    }
+    const splitKey: SplitIO.SplitKey = consumer.bucketingKey
+      ? { matchingKey: consumer.targetingKey, bucketingKey: consumer.bucketingKey }
+      : consumer.targetingKey;
 
     await waitUntilReady(this.client, this.events, this.metadata.name);
     const { treatment: value, config }: SplitIO.TreatmentWithConfig =
       await this.client.getTreatmentWithConfig(
-        consumer.targetingKey,
+        splitKey,
         flagKey,
         consumer.attributes
       );
