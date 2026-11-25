@@ -16,5 +16,9 @@ module.exports = {
     '^.+\\.[tj]s$': 'ts-jest',
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
+  // Source files use explicit `.js` extensions in relative imports (required by native ESM)
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   coverageDirectory: '../../coverage/packages/js-split-provider',
 };

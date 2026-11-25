@@ -14,10 +14,10 @@ import {
   TrackingEventDetails
 } from '@openfeature/server-sdk';
 import type SplitIO from '@splitsoftware/splitio/types/splitio';
-import { getSplitClient } from './client-resolver';
-import { transformContext } from './context';
-import { parseValidJsonObject, parseValidNumber } from './parsers';
-import { attachReadyEventHandlers, waitUntilReady } from './readiness';
+import { getSplitClient } from './client-resolver.js';
+import { transformContext } from './context.js';
+import { parseValidJsonObject, parseValidNumber } from './parsers.js';
+import { attachReadyEventHandlers, waitUntilReady } from './readiness.js';
 import {
   CONTROL_TREATMENT,
   CONTROL_VALUE_ERROR_MESSAGE,
@@ -25,7 +25,7 @@ import {
   PROVIDER_NAME,
   SplitProviderConstructorOptions,
   type Consumer
-} from './types';
+} from './types.js';
 
 export class OpenFeatureSplitProvider implements Provider {
   readonly metadata = {

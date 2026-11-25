@@ -1,6 +1,6 @@
 {
   "name": "@splitsoftware/openfeature-js-split-provider",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Split OpenFeature Provider",
   "files": [
     "README.md",
@@ -12,9 +12,9 @@
     "es",
     "src"
   ],
-  "repository": "splitio/openfeature-split-provider-js",
-  "homepage": "https://github.com/splitio/openfeature-split-provider-js#readme",
-  "bugs": "https://github.com/splitio/openfeature-split-provider-js/issues",
+  "repository": "splitio/split-openfeature-provider-js",
+  "homepage": "https://github.com/splitio/split-openfeature-provider-js#readme",
+  "bugs": "https://github.com/splitio/split-openfeature-provider-js/issues",
   "license": "Apache-2.0",
   "author": "Josh Sirota <josh.sirota@split.io>",
   "contributors": [
@@ -30,12 +30,14 @@
   },
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "require": "./lib/index.js",
       "import": "./es/index.js"
     }
   },
   "dependencies": {
-    "@splitsoftware/splitio": "^11.10.0"
+    "@splitsoftware/splitio": "^11.10.0",
+    "tslib": "^2.3.1"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.20.0"
@@ -67,6 +69,7 @@
     "build-cjs": "rimraf lib && tsc -outDir lib -m CommonJS",
     "postbuild-cjs": "cross-env NODE_ENV=cjs node scripts/copy.packages.json.js && ./scripts/build_cjs_replace_imports.sh",
     "build": "rimraf lib es && npm run build-cjs && npm run build-esm",
+    "postbuild": "node scripts/check_module_imports.js",
     "check": "npm run check:lint",
     "check:lint": "eslint src",
     "test": "cross-env NODE_ENV=test jest",

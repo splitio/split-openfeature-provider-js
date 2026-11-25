@@ -1,6 +1,6 @@
 import type { EvaluationContext } from '@openfeature/server-sdk';
-import type { BucketingKeyIssue, Consumer } from './types';
-import { DEFAULT_TRAFFIC_TYPE } from './types';
+import type { BucketingKeyIssue, Consumer } from './types.js';
+import { DEFAULT_TRAFFIC_TYPE } from './types.js';
 
 function readBucketingKey(
   value: unknown

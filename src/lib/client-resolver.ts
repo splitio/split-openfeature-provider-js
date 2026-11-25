@@ -1,6 +1,6 @@
 import { SplitFactory } from '@splitsoftware/splitio';
 import type SplitIO from '@splitsoftware/splitio/types/splitio';
-import type { SplitProviderConstructorOptions, SplitProviderOptions } from './types';
+import type { SplitProviderConstructorOptions, SplitProviderOptions } from './types.js';
 
 /**
  * Resolves the Split client from the various supported constructor option shapes.

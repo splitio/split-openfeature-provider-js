@@ -1,14 +1,9 @@
 #!/bin/bash
 
 # replace splitio-commons imports to use ES modules
-replace '@splitsoftware/splitio-commons/src' '@splitsoftware/splitio-commons/esm' ./es -r
+replace '@splitsoftware/splitio-commons/src' '@splitsoftware/splitio-commons/esm' ./es -r || exit 1
 
-# Fix import extension in es/index.js
-replace './lib/js-split-provider' './lib/js-split-provider.js' ./es/index.js -r
+# Mark the ES build as native ESM so Node.js loads es/**/*.js as ES modules
+echo '{ "type": "module" }' > ./es/package.json || exit 1
 
-if [ $? -eq 0 ]
-then
-  exit 0
-else
-  exit 1
-fi
+exit 0
