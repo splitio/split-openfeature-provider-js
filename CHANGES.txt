@@ -1,4 +1,4 @@
-1.4.0 (TBD)
+1.4.0 (November 26, 2026)
   - Added support for the `bucketingKey` evaluation context attribute: when it is a non-blank string, the provider evaluates with Split key { matchingKey: targetingKey, bucketingKey }.
   - BREAKING-ish behavior change: `bucketingKey` is no longer forwarded to Split as a targeting attribute. Targeting rules on an attribute literally named `bucketingKey` stop matching.
   - A `bucketingKey` longer than 250 characters now makes the evaluation return the default value (Split `control`, FLAG_NOT_FOUND) instead of being ignored.
