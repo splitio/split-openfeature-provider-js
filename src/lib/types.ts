@@ -8,11 +8,20 @@ export type SplitProviderOptions = {
 };
 
 /**
+ * Why a `bucketingKey` present in the evaluation context was ignored.
+ */
+export type BucketingKeyIssue = 'blank' | 'not a string';
+
+/**
  * Consumer representation used for Split API calls:
- * targeting key, traffic type, and attributes.
+ * targeting key, optional bucketing key, traffic type, and attributes.
  */
 export type Consumer = {
   targetingKey: string | undefined;
+  /** Valid (non-blank string) bucketing key, trimmed. */
+  bucketingKey?: string;
+  /** Set when a `bucketingKey` was present but ignored. */
+  bucketingKeyIssue?: BucketingKeyIssue;
   trafficType: string;
   attributes: SplitIO.Attributes;
 };

@@ -1,3 +1,13 @@
+1.4.0 (November 26, 2026)
+  - Added support for the `bucketingKey` evaluation context attribute: when it is a non-blank string, the provider evaluates with Split key { matchingKey: targetingKey, bucketingKey }.
+  - BREAKING-ish behavior change: `bucketingKey` is no longer forwarded to Split as a targeting attribute. Targeting rules on an attribute literally named `bucketingKey` stop matching.
+  - A `bucketingKey` longer than 250 characters now makes the evaluation return the default value (Split `control`, FLAG_NOT_FOUND) instead of being ignored.
+  - `bucketingKey` is trimmed; blank or non-string values are ignored with a warning.
+  - Fixed native ESM import failing with ERR_MODULE_NOT_FOUND on Node.js (relative imports now include `.js` extensions and the `es` build is marked as `"type": "module"`) (#26).
+  - Fixed `repository`, `homepage` and `bugs` URLs in package.json.
+  - Added a `types` condition to package.json `exports` so TypeScript resolves the type definitions with `moduleResolution` `node16`, `nodenext` and `bundler`.
+  - Added `tslib` as an explicit dependency (it was required by the build output but only installed transitively).
+
 1.3.0 (March 2, 2026)
   - Updated ConfigurationChanged event to forward SDK_UPDATE metadata from Split (flagsChanged, metadata with type and names)
   - Requires @splitsoftware/splitio ^11.10.0 for SDK_UPDATE metadata support

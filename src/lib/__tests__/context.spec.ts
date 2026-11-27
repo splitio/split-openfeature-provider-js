@@ -70,3 +70,45 @@ describe('context', () => {
     });
   });
 });
+
+describe('transformContext bucketingKey', () => {
+  it('reads a valid bucketingKey and does not forward it as an attribute', () => {
+    const result = transformContext({ targetingKey: 'u1', bucketingKey: 'b1', plan: 'pro' });
+    expect(result.bucketingKey).toBe('b1');
+    expect(result.bucketingKeyIssue).toBeUndefined();
+    expect(result.attributes).toEqual({ plan: 'pro' });
+  });
+
+  it('trims surrounding whitespace', () => {
+    const result = transformContext({ targetingKey: 'u1', bucketingKey: ' b1 ' });
+    expect(result.bucketingKey).toBe('b1');
+    expect(result.bucketingKeyIssue).toBeUndefined();
+  });
+
+  it.each([undefined, null])('treats %p as absent, with no issue', (value) => {
+    const result = transformContext({ targetingKey: 'u1', bucketingKey: value } as never);
+    expect(result).not.toHaveProperty('bucketingKey');
+    expect(result.bucketingKeyIssue).toBeUndefined();
+    expect(result.attributes).toEqual({});
+  });
+
+  it.each([
+    ['', 'blank'],
+    ['   ', 'blank'],
+    [1, 'not a string'],
+    [true, 'not a string'],
+    [{ x: 1 }, 'not a string'],
+  ])('ignores %p with issue %p and strips it from attributes', (value, issue) => {
+    const result = transformContext({ targetingKey: 'u1', bucketingKey: value } as never);
+    expect(result.bucketingKey).toBeUndefined();
+    expect(result.bucketingKeyIssue).toBe(issue);
+    expect(result.attributes).toEqual({});
+  });
+
+  it('keeps BucketingKey and bucketing_key as plain attributes', () => {
+    const result = transformContext({ targetingKey: 'u1', BucketingKey: 'x', bucketing_key: 'y' });
+    expect(result.bucketingKey).toBeUndefined();
+    expect(result.bucketingKeyIssue).toBeUndefined();
+    expect(result.attributes).toEqual({ BucketingKey: 'x', bucketing_key: 'y' });
+  });
+});

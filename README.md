@@ -91,6 +91,18 @@ OpenFeatureAPI.getInstance().setCtx(context)
 ```
 If the context was set at the client or api level, it is not required to provide it during flag evaluation.
 
+### Bucketing key
+Set `bucketingKey` in the evaluation context to have Split bucket on a different key than the targeting key (Split's matching key + bucketing key). It is optional and sits next to `targetingKey` and `trafficType`:
+```js
+const context = { targetingKey: 'user-123', bucketingKey: 'account-42' };
+const value = await client.getBooleanValue('boolFlag', false, context);
+```
+- `bucketingKey` is reserved: it is **not** forwarded to Split as an attribute.
+- Leading/trailing whitespace is trimmed. A blank or non-string value is ignored (a warning is logged through the OpenFeature logger) and the targeting key alone is used.
+- An empty targeting key (`''`) is treated as missing.
+- A value longer than 250 characters is rejected by the Split SDK: the evaluation returns the default value (`FLAG_NOT_FOUND`, Split `control`).
+- A targeting key is still required. `track` sends the targeting key only.
+
 ## Evaluate with details
 Use the get*Details(...) APIs to get the value and rich context (variant, reason, error code, metadata). This provider includes the Split treatment config as a raw JSON string under flagMetadata["config"]
 

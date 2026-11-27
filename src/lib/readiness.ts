@@ -1,7 +1,7 @@
 import type { OpenFeatureEventEmitter } from '@openfeature/server-sdk';
 import { ProviderEvents } from '@openfeature/server-sdk';
 import type SplitIO from '@splitsoftware/splitio/types/splitio';
-import { PROVIDER_NAME } from './types';
+import { PROVIDER_NAME } from './types.js';
 
 /**
  * Builds OpenFeature Ready event details including Split SDK ready metadata.

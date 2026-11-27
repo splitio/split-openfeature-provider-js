@@ -14,10 +14,10 @@ import {
   TrackingEventDetails
 } from '@openfeature/server-sdk';
 import type SplitIO from '@splitsoftware/splitio/types/splitio';
-import { getSplitClient } from './client-resolver';
-import { transformContext } from './context';
-import { parseValidJsonObject, parseValidNumber } from './parsers';
-import { attachReadyEventHandlers, waitUntilReady } from './readiness';
+import { getSplitClient } from './client-resolver.js';
+import { transformContext } from './context.js';
+import { parseValidJsonObject, parseValidNumber } from './parsers.js';
+import { attachReadyEventHandlers, waitUntilReady } from './readiness.js';
 import {
   CONTROL_TREATMENT,
   CONTROL_VALUE_ERROR_MESSAGE,
@@ -25,7 +25,7 @@ import {
   PROVIDER_NAME,
   SplitProviderConstructorOptions,
   type Consumer
-} from './types';
+} from './types.js';
 
 export class OpenFeatureSplitProvider implements Provider {
   readonly metadata = {
@@ -36,6 +36,8 @@ export class OpenFeatureSplitProvider implements Provider {
 
   private client: SplitIO.IClient | SplitIO.IAsyncClient;
   private trafficType: string;
+  // Invalid-bucketingKey reasons already warned about; repeats are logged at debug.
+  private readonly warnedBucketingKeyIssues = new Set<string>();
   public readonly events = new OpenFeatureEventEmitter();
 
   constructor(
@@ -78,10 +80,10 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<boolean>> {
-    void logger;
     const details = await this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
     const treatment = details.value.toLowerCase();
 
@@ -101,10 +103,10 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<string>> {
-    void logger;
     return this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
   }
 
@@ -114,10 +116,10 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<number>> {
-    void logger;
     const details = await this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
     return { ...details, value: parseValidNumber(details.value) };
   }
@@ -128,17 +130,18 @@ export class OpenFeatureSplitProvider implements Provider {
     context: EvaluationContext,
     logger: Logger
   ): Promise<ResolutionDetails<U>> {
-    void logger;
     const details = await this.evaluateTreatment(
       flagKey,
-      transformContext(context, this.trafficType)
+      transformContext(context, this.trafficType),
+      logger
     );
     return { ...details, value: parseValidJsonObject<U>(details.value) };
   }
 
   private async evaluateTreatment(
     flagKey: string,
-    consumer: Consumer
+    consumer: Consumer,
+    logger?: Logger
   ): Promise<ResolutionDetails<string>> {
     if (!consumer.targetingKey) {
       throw new TargetingKeyMissingError(
@@ -148,11 +151,23 @@ export class OpenFeatureSplitProvider implements Provider {
     if (flagKey == null || flagKey === '') {
       throw new FlagNotFoundError('flagKey must be a non-empty string');
     }
+    if (consumer.bucketingKeyIssue) {
+      const message = `Split provider: ignoring bucketingKey (${consumer.bucketingKeyIssue}); evaluating with the targeting key only.`;
+      if (this.warnedBucketingKeyIssues.has(consumer.bucketingKeyIssue)) {
+        logger?.debug(message);
+      } else {
+        this.warnedBucketingKeyIssues.add(consumer.bucketingKeyIssue);
+        logger?.warn(message);
+      }
+    }
+    const splitKey: SplitIO.SplitKey = consumer.bucketingKey
+      ? { matchingKey: consumer.targetingKey, bucketingKey: consumer.bucketingKey }
+      : consumer.targetingKey;
 
     await waitUntilReady(this.client, this.events, this.metadata.name);
     const { treatment: value, config }: SplitIO.TreatmentWithConfig =
       await this.client.getTreatmentWithConfig(
-        consumer.targetingKey,
+        splitKey,
         flagKey,
         consumer.attributes
       );
