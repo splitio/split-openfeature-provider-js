@@ -376,6 +376,20 @@ describe('bucketingKey', () => {
     expect(logger.warn.mock.calls[0][0]).not.toContain('12345');
   });
 
+  test('repeated invalid bucketingKey warns once per reason, then logs at debug', async () => {
+    const ctx = { targetingKey: 'u1', bucketingKey: '' };
+    await provider.resolveStringEvaluation('f', 'x', ctx, logger);
+    await provider.resolveStringEvaluation('g', 'x', ctx, logger);
+    await provider.resolveStringEvaluation('h', 'x', ctx, logger);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.debug).toHaveBeenCalledTimes(2);
+    expect(logger.debug.mock.calls[0][0]).toContain('blank');
+
+    await provider.resolveStringEvaluation('f', 'x', { targetingKey: 'u1', bucketingKey: 1 }, logger);
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+    expect(logger.warn.mock.calls[1][0]).toContain('not a string');
+  });
+
   test('invalid bucketingKey without a logger does not throw', async () => {
     await expect(provider.resolveStringEvaluation('f', 'x', { targetingKey: 'u1', bucketingKey: '' })).resolves.toMatchObject({ value: 'on' });
   });

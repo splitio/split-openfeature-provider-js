@@ -6,9 +6,13 @@ const { execFileSync } = require('child_process');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
+const assertExport = (format) =>
+  "if (typeof OpenFeatureSplitProvider !== 'function') { " +
+  `console.error('${format} export check FAILED: expected export OpenFeatureSplitProvider to be a function, got ' + typeof OpenFeatureSplitProvider); ` +
+  'process.exit(1); }';
 const checks = {
-  esm: ['--input-type=module', '-e', "import { OpenFeatureSplitProvider } from './es/index.js'; if (typeof OpenFeatureSplitProvider !== 'function') process.exit(1);"],
-  cjs: ['-e', "const { OpenFeatureSplitProvider } = require('./lib/index.js'); if (typeof OpenFeatureSplitProvider !== 'function') process.exit(1);"],
+  esm: ['--input-type=module', '-e', `import { OpenFeatureSplitProvider } from './es/index.js'; ${assertExport('ESM')}`],
+  cjs: ['-e', `const { OpenFeatureSplitProvider } = require('./lib/index.js'); ${assertExport('CJS')}`],
 };
 
 for (const [name, args] of Object.entries(checks)) {

@@ -36,6 +36,8 @@ export class OpenFeatureSplitProvider implements Provider {
 
   private client: SplitIO.IClient | SplitIO.IAsyncClient;
   private trafficType: string;
+  // Invalid-bucketingKey reasons already warned about; repeats are logged at debug.
+  private readonly warnedBucketingKeyIssues = new Set<string>();
   public readonly events = new OpenFeatureEventEmitter();
 
   constructor(
@@ -150,9 +152,13 @@ export class OpenFeatureSplitProvider implements Provider {
       throw new FlagNotFoundError('flagKey must be a non-empty string');
     }
     if (consumer.bucketingKeyIssue) {
-      logger?.warn(
-        `Split provider: ignoring bucketingKey (${consumer.bucketingKeyIssue}); evaluating with the targeting key only.`
-      );
+      const message = `Split provider: ignoring bucketingKey (${consumer.bucketingKeyIssue}); evaluating with the targeting key only.`;
+      if (this.warnedBucketingKeyIssues.has(consumer.bucketingKeyIssue)) {
+        logger?.debug(message);
+      } else {
+        this.warnedBucketingKeyIssues.add(consumer.bucketingKeyIssue);
+        logger?.warn(message);
+      }
     }
     const splitKey: SplitIO.SplitKey = consumer.bucketingKey
       ? { matchingKey: consumer.targetingKey, bucketingKey: consumer.bucketingKey }
